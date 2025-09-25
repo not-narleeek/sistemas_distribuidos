@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongo_yahoo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo:/docker-entrypoint-initdb.d
+
+  dummy:
+    build: ./dummy
+    container_name: dummy_service
+    ports:
+      - "6000:6000"
+    depends_on:
+      - mongo
+
+  cache:
+    build: ./cache
+    container_name: cache_service
+    ports:
+      - "5000:5000"
+    command: ["--policy", "lru", "--size", "500", "--mongo", "mongodb://mongo:27017/"]
+    depends_on:
+      - mongo
+      - dummy
+
+  
+  generator:
+    build: ./generador
+    container_name: generator_service
+    depends_on:
+      - cache
+
+volumes:
+  mongo_data:
