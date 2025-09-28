@@ -5,6 +5,7 @@ import socket
 import time
 import argparse
 import json
+import sys
 
 
 class CacheBase:
@@ -71,15 +72,29 @@ class LFUCache(CacheBase):
         self.freq[key] += 1
 
 
-
 def query_dummy(payload, host="localhost", port=6000):
     try:
-        with socket.create_connection((host, port), timeout=5) as sock:
+        with socket.create_connection((host, port), timeout=10) as sock:
             sock.sendall((json.dumps(payload) + "\n").encode())
             response = sock.recv(8192).decode().strip()
             return response
     except Exception as e:
+        print(f"[Cache] Error conectando con dummy LLM: {e}", file=sys.stderr)
         return json.dumps({"generated_answer": "", "score": 0.0, "error": str(e)})
+
+
+def wait_for_service(host, port, timeout=60):
+    """Espera a que un servicio esté disponible"""
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            with socket.create_connection((host, port), timeout=2):
+                print(f"[Cache] Servicio {host}:{port} está disponible")
+                return True
+        except (socket.error, ConnectionRefusedError):
+            print(f"[Cache] Esperando a {host}:{port}...")
+            time.sleep(2)
+    return False
 
 
 def main():
@@ -94,65 +109,106 @@ def main():
     parser.add_argument('--dummy_port', type=int, default=6000)
     args = parser.parse_args()
 
-    print(f"[Cache] Iniciando con política {args.policy.upper()} y tamaño {args.size}")
+    print(f"[Cache] Iniciando con politica {args.policy.upper()} y tamaño {args.size}")
     cache = LRUCache(args.size) if args.policy == 'lru' else LFUCache(args.size)
 
-    client = MongoClient(args.mongo)
-    collection = client[args.db][args.coll]
+    # Esperar a que MongoDB esté disponible
+    print("[Cache] Esperando a MongoDB...")
+    mongo_host = args.mongo.split('://')[1].split(':')[0] if '://' in args.mongo else 'localhost'
+    if not wait_for_service(mongo_host, 27017):
+        print("[Cache] Error: MongoDB no está disponible")
+        sys.exit(1)
 
+    # Esperar a que dummy LLM esté disponible
+    print("[Cache] Esperando a dummy LLM...")
+    if not wait_for_service(args.dummy_host, args.dummy_port):
+        print("[Cache] Error: Dummy LLM no está disponible")
+        sys.exit(1)
+
+    # Conectar a MongoDB
+    try:
+        client = MongoClient(args.mongo)
+        # Verificar conexión
+        client.admin.command('ping')
+        collection = client[args.db][args.coll]
+        print(f"[Cache] Conectado a MongoDB: {args.mongo}")
+    except Exception as e:
+        print(f"[Cache] Error conectando a MongoDB: {e}")
+        sys.exit(1)
+
+    # Iniciar servidor
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(("0.0.0.0", args.port))
-    server.listen(5)
-    print(f"[Cache] Esperando conexiones en puerto {args.port}...")
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        server.bind(("0.0.0.0", args.port))
+        server.listen(5)
+        print(f"[Cache] Esperando conexiones en puerto {args.port}...")
+    except Exception as e:
+        print(f"[Cache] Error iniciando servidor: {e}")
+        sys.exit(1)
 
     while True:
-        conn, addr = server.accept()
-        with conn:
-            data = conn.recv(4096).decode().strip()
-            if not data:
-                continue
-
-            if data.upper() == "STATS":
-                stats = cache.stats()
-                conn.sendall(json.dumps(stats).encode())
-                continue
-
-            try:
-                payload = json.loads(data)
-            except json.JSONDecodeError:
-                conn.sendall("INVALID_JSON\n".encode())
-                continue
-
-            key = payload.get("id")
-            if not key:
-                conn.sendall("MISSING_ID\n".encode())
-                continue
-
-            start = time.time()
-            doc = cache.get(key)
-            if doc:
-                latency = time.time() - start
-                response = f"HIT {key} ({latency:.4f}s)\n{json_util.dumps(doc)}\n"
-                conn.sendall(response.encode())
-            else:
-                try:
-                    object_id = ObjectId(key)
-                except Exception:
-                    conn.sendall(f"INVALID_ID {key}\n".encode())
+        try:
+            conn, addr = server.accept()
+            print(f"[Cache] Conexión recibida de {addr}")
+            with conn:
+                data = conn.recv(4096).decode().strip()
+                if not data:
                     continue
 
-                doc = collection.find_one({"_id": object_id})
+                if data.upper() == "STATS":
+                    stats = cache.stats()
+                    conn.sendall(json.dumps(stats).encode())
+                    continue
+
+                try:
+                    payload = json.loads(data)
+                except json.JSONDecodeError:
+                    conn.sendall("INVALID_JSON\n".encode())
+                    continue
+
+                key = payload.get("id")
+                if not key:
+                    conn.sendall("MISSING_ID\n".encode())
+                    continue
+
+                start = time.time()
+                doc = cache.get(key)
                 if doc:
-                    cache.put(key, doc)
                     latency = time.time() - start
-
-                    
-                    dummy_response = query_dummy(payload, host=args.dummy_host, port=args.dummy_port)
-
-                    response = f"MISS {key} ({latency:.4f}s)\n{dummy_response}\n"
+                    response = f"HIT {key} ({latency:.4f}s)\n{json_util.dumps(doc)}\n"
                     conn.sendall(response.encode())
+                    print(f"[Cache] HIT: {key}")
                 else:
-                    conn.sendall(f"NOTFOUND {key}\n".encode())
+                    try:
+                        object_id = ObjectId(key)
+                    except Exception:
+                        conn.sendall(f"INVALID_ID {key}\n".encode())
+                        continue
+
+                    doc = collection.find_one({"_id": object_id})
+                    if doc:
+                        cache.put(key, doc)
+                        latency = time.time() - start
+
+                        # Consultar dummy LLM
+                        dummy_response = query_dummy(payload, host=args.dummy_host, port=args.dummy_port)
+
+                        response = f"MISS {key} ({latency:.4f}s)\n{dummy_response}\n"
+                        conn.sendall(response.encode())
+                        print(f"[Cache] MISS: {key}")
+                    else:
+                        conn.sendall(f"NOTFOUND {key}\n".encode())
+                        print(f"[Cache] NOT FOUND: {key}")
+
+        except KeyboardInterrupt:
+            print("\n[Cache] Cerrando servidor...")
+            break
+        except Exception as e:
+            print(f"[Cache] Error en el servidor: {e}")
+            continue
+
+    server.close()
 
 
 if __name__ == "__main__":

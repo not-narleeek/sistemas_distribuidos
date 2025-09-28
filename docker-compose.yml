@@ -1,13 +1,18 @@
+version: '3.8'
+
 services:
   mongo:
-    image: mongo:6
+    image: mongo:6.0
     container_name: mongo_yahoo
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
-      - ./mongo:/docker-entrypoint-initdb.d
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
+    restart: always
 
+volumes:
+  mongo_data:
   llm:
     build: ./LLM
     container_name: dummy_LLM
@@ -21,18 +26,21 @@ services:
     container_name: cache
     ports:
       - "5000:5000"
-    command: ["--policy", "lru", "--size", "500", "--mongo", "mongodb://mongo:27017/"]
+    command: ["--policy", "lru", "--size", "500", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--dummy_host", "llm", "--dummy_port", "6000"]
     depends_on:
       - mongo
       - llm
 
-  
   generador:
     build: ./generador
     container_name: generador_yahoo
-    command: ["--dist", "poisson"]
+    command: ["--dist", "poisson", "--n", "1000", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--cache_host", "cache", "--cache_port", "5000"]
     depends_on:
       - cache
 
 volumes:
   mongo_data:
+
+networks:
+  default:
+    driver: bridge
