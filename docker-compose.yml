@@ -13,16 +13,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  mongo-seed:
-    image: mongo:6.0
-    container_name: mongo_seed
-    depends_on:
-      mongo:
-        condition: service_healthy
-    volumes:
-      - ./mongo:/docker-entrypoint-initdb.d
-    command: ["mongoimport", "--host", "mongo", "--db", "yahoo_db", "--collection", "questions", "--type", "json", "--file", "/docker-entrypoint-initdb.d/bdd.json", "--jsonArray=false"]
     
   llm:
     build: ./LLM
