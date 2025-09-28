@@ -10,6 +10,21 @@ services:
       - mongo_data:/data/db
       - ./mongo-init:/docker-entrypoint-initdb.d:ro
     restart: always
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-seed:
+    image: mongo:6.0
+    container_name: mongo_seed
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./mongo:/docker-entrypoint-initdb.d
+    command: ["mongoimport", "--host", "mongo", "--db", "yahoo_db", "--collection", "questions", "--type", "json", "--file", "/docker-entrypoint-initdb.d/bdd.json", "--jsonArray=false"]
 
 volumes:
   mongo_data:
@@ -19,7 +34,8 @@ volumes:
     ports:
       - "6000:6000"
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
 
   cache:
     build: ./cache
@@ -28,19 +44,25 @@ volumes:
       - "5000:5000"
     command: ["--policy", "lru", "--size", "500", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--dummy_host", "llm", "--dummy_port", "6000"]
     depends_on:
-      - mongo
-      - llm
+      mongo:
+        condition: service_healthy
+      llm:
+        condition: service_started
 
   generador:
     build: ./generador
     container_name: generador_yahoo
     command: ["--dist", "poisson", "--n", "1000", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--cache_host", "cache", "--cache_port", "5000"]
     depends_on:
-      - cache
+      cache:
+        condition: service_started
 
 volumes:
   mongo_data:
 
+<<<<<<< HEAD
 networks:
   default:
     driver: bridge
+=======
+>>>>>>> d7ed46c (Cambio de localhost -> mongo por docker-compose.yml. Segundo cambio en docker-compose.yml en como funciona el mongo. Problemas: El mongo no crea la bd con los datos del json.)

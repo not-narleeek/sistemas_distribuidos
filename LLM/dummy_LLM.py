@@ -29,7 +29,7 @@ def generate_answer(question_title, question_content):
 
 
 def run_dummy_server(host="0.0.0.0", port=6000,
-                     mongo_uri="mongodb://localhost:27017/",
+                     mongo_uri="mongodb://mongo:27017/",
                      db_name="yahoo_db", coll_name="questions"):
 
     client = MongoClient(mongo_uri)

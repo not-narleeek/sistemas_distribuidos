@@ -101,7 +101,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--policy', choices=['lru', 'lfu'], required=True)
     parser.add_argument('--size', type=int, default=100)
-    parser.add_argument('--mongo', default='mongodb://localhost:27017/')
+    parser.add_argument('--mongo', default='mongodb://mongo:27017/')
     parser.add_argument('--db', default='yahoo_db')
     parser.add_argument('--coll', default='questions')
     parser.add_argument('--port', type=int, default=5000)
