@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mongo:
     image: mongo:6.0
@@ -25,9 +23,7 @@ services:
     volumes:
       - ./mongo:/docker-entrypoint-initdb.d
     command: ["mongoimport", "--host", "mongo", "--db", "yahoo_db", "--collection", "questions", "--type", "json", "--file", "/docker-entrypoint-initdb.d/bdd.json", "--jsonArray=false"]
-
-volumes:
-  mongo_data:
+    
   llm:
     build: ./LLM
     container_name: dummy_LLM
@@ -59,10 +55,3 @@ volumes:
 
 volumes:
   mongo_data:
-
-<<<<<<< HEAD
-networks:
-  default:
-    driver: bridge
-=======
->>>>>>> d7ed46c (Cambio de localhost -> mongo por docker-compose.yml. Segundo cambio en docker-compose.yml en como funciona el mongo. Problemas: El mongo no crea la bd con los datos del json.)
