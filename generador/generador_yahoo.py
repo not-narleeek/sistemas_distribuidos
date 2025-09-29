@@ -39,11 +39,12 @@ def run_generator(dist, params, total_queries, mongo_uri, db_name, coll_name, ca
     client = MongoClient(mongo_uri)
     coll = client[db_name][coll_name]
 
-    
-    docs = list(coll.find({}, {"question_title": 1, "question_content": 1}))
-    if not docs:
+    while True:
+        docs = list(coll.find({}, {"question_title": 1, "question_content": 1}))
+        if docs:
+            break
         print("No se encontraron preguntas en la colección.")
-        return
+        time.sleep(2)
 
     print(f"[Generator] {len(docs)} preguntas cargadas. Generando {total_queries} consultas usando '{dist}'...")
 
