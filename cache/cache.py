@@ -72,6 +72,28 @@ class LFUCache(CacheBase):
         self.freq[key] += 1
 
 
+class FIFOCache(CacheBase):
+    def __init__(self, size):
+        super().__init__(size)
+        self.queue = []
+
+    def get(self, key):
+        if key in self.cache:
+            self.hits += 1
+            return self.cache[key]
+        self.misses += 1
+        return None
+
+    def put(self, key, value):
+        if key not in self.cache:
+            if len(self.cache) >= self.size:
+                # Elimina el primero que entró
+                oldest_key = self.queue.pop(0)
+                del self.cache[oldest_key]
+            self.queue.append(key)
+        self.cache[key] = value
+
+
 def query_dummy(payload, host="mongo", port=6000):
     try:
         with socket.create_connection((host, port), timeout=10) as sock:
@@ -99,7 +121,7 @@ def wait_for_service(host, port, timeout=60):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--policy', choices=['lru', 'lfu'], required=True)
+    parser.add_argument('--policy', choices=['lru', 'lfu', 'fifo'], required=True)
     parser.add_argument('--size', type=int, default=100)
     parser.add_argument('--mongo', default='mongodb://mongo:27017/')
     parser.add_argument('--db', default='yahoo_db')
@@ -110,7 +132,16 @@ def main():
     args = parser.parse_args()
 
     print(f"[Cache] Iniciando con politica {args.policy.upper()} y tamaño {args.size}")
-    cache = LRUCache(args.size) if args.policy == 'lru' else LFUCache(args.size)
+    if args.policy == 'lru':
+        cache = LRUCache(args.size)
+    elif args.policy == 'lfu':
+        cache = LFUCache(args.size)
+    elif args.policy == 'fifo':
+        cache = FIFOCache(args.size)
+    else:
+        print(f"[Cache] Política desconocida: {args.policy}")
+        sys.exit(1)
+
 
     # Esperar a que MongoDB esté disponible
     print("[Cache] Esperando a MongoDB...")
@@ -124,7 +155,6 @@ def main():
     if not wait_for_service(args.dummy_host, args.dummy_port):
         print("[Cache] Error: Dummy LLM no está disponible")
         sys.exit(1)
-
     # Conectar a MongoDB
     try:
         client = MongoClient(args.mongo)
