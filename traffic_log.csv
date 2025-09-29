@@ -1,0 +1,183 @@
+timestamp,operation,id,title,status,latency,score
+2025-09-29T01:07:56,GET,68d9dbecf105e20b08bb77ca,would you give me examples of offsprings?,ERROR,0.0004,
+2025-09-29T01:07:57,GET,68d9dbecf105e20b08bb77cb,Who are the greatest political leaders or historic,MISS,0.0231,0.1326
+2025-09-29T01:07:57,GET,68d9dbecf105e20b08bb78a9,Just wanted to share this...?,MISS,0.0109,0.1426
+2025-09-29T01:07:58,GET,68d9dbecf105e20b08bb78f6,Where can I find a fun job in Dallas?,MISS,0.0068,0.0
+2025-09-29T01:07:58,GET,68d9dbecf105e20b08bb7828,im really confused?,MISS,0.0077,0.1351
+2025-09-29T01:07:59,GET,68d9dbecf105e20b08bb78ac,"Which is regulation sized pool table 8"" or 7""?",MISS,0.0175,0.1162
+2025-09-29T01:07:59,GET,68d9dbecf105e20b08bb789e,what machines do i need to start a wood manufactur,MISS,0.0056,0.1562
+2025-09-29T01:07:59,GET,68d9dbecf105e20b08bb7874,"If you think someone is self harming, what should ",MISS,0.0157,0.3055
+2025-09-29T01:08:01,GET,68d9dbecf105e20b08bb7813,Is Disney going to come out with a fairy tail ever,MISS,0.0089,0.2683
+2025-09-29T01:08:03,GET,68d9dbecf105e20b08bb784f,Mountain Climbing advice needed.  Can a novice cli,MISS,0.0089,0.2147
+2025-09-29T01:08:08,GET,68d9dbecf105e20b08bb78c9,Can someone explain that stupid PS 3 commercial wi,MISS,0.0137,0.148
+2025-09-29T01:08:08,GET,68d9dbecf105e20b08bb78d1,Banking & Finance in relation to Development: thes,MISS,0.0132,0.0217
+2025-09-29T01:08:09,GET,68d9dbecf105e20b08bb7854,Can I give her my number first?,MISS,0.0124,0.0438
+2025-09-29T01:08:13,GET,68d9dbecf105e20b08bb784e,what do you say if you're a women having phone sex,MISS,0.0057,0.3214
+2025-09-29T01:08:13,GET,68d9dbecf105e20b08bb7832,Palmer or Rivers?,MISS,0.0051,0.1542
+2025-09-29T01:08:14,GET,68d9dbecf105e20b08bb7955,Think the Democrats are....?,MISS,0.0099,0.2881
+2025-09-29T01:08:15,GET,68d9dbecf105e20b08bb7959,How do I get my site Listed under         guitar i,MISS,0.0128,0.149
+2025-09-29T01:08:16,GET,68d9dbecf105e20b08bb78c1,Which channels show World Cup Games Arabic comment,MISS,0.0124,0.1393
+2025-09-29T01:08:17,GET,68d9dbecf105e20b08bb7838,I need money for some hockey pads.  What's the bes,MISS,0.0114,0.0
+2025-09-29T01:08:17,GET,68d9dbecf105e20b08bb77dc,Can Steven Gerard and Frank Lampard play in the sa,MISS,0.006,0.218
+2025-09-29T01:08:20,GET,68d9dbecf105e20b08bb7885,Vengence was sweet but who is really imposter Kane,MISS,0.0124,0.1343
+2025-09-29T01:08:23,GET,68d9dbecf105e20b08bb78a1,What foreign Prime Minister grew up in...?,MISS,0.0065,0.0
+2025-09-29T01:08:23,GET,68d9dbecf105e20b08bb77ae,Specific Places Where U cOULD take A lie Detector ,MISS,0.0164,0.0296
+2025-09-29T01:08:24,GET,68d9dbecf105e20b08bb796d,need advice for a friend about a guy she met at th,MISS,0.0176,0.1895
+2025-09-29T01:08:24,GET,68d9dbecf105e20b08bb7984,"what's so called ""conformance test"" for mobile?",MISS,0.0178,0.0
+2025-09-29T01:08:25,GET,68d9dbecf105e20b08bb791a,Why has Bush proposed cutting Veterans benefits?,MISS,0.0114,0.0787
+2025-09-29T01:08:26,GET,68d9dbecf105e20b08bb77c2,how do u know if he really likes u???,MISS,0.0064,0.1425
+2025-09-29T01:08:26,GET,68d9dbecf105e20b08bb78e6,Which is better/more durable from archiving data o,MISS,0.0058,0.1176
+2025-09-29T01:08:26,GET,68d9dbecf105e20b08bb7812,"for the uc apps, for academic history, do i enter ",MISS,0.0085,0.2417
+2025-09-29T01:08:27,GET,68d9dbecf105e20b08bb7862,What's the best way to avoid being called on in Cl,MISS,0.0073,0.296
+2025-09-29T01:08:28,GET,68d9dbecf105e20b08bb79a7,What Were you for HALLOWEEN???,MISS,0.0058,0.0
+2025-09-29T01:08:30,GET,68d9dbecf105e20b08bb7792,How many grams of SO3 are produced from the comple,MISS,0.0094,0.3536
+2025-09-29T01:08:31,GET,68d9dbecf105e20b08bb77a4,"Where can I go for Valentine's Day, other than on ",MISS,0.0052,0.0829
+2025-09-29T01:08:31,GET,68d9dbecf105e20b08bb7879,where can i purchase a laser engraved baseball bat,MISS,0.0047,0.0378
+2025-09-29T01:08:31,GET,68d9dbecf105e20b08bb77a1,I just found out a couple of Christians are moving,MISS,0.0101,0.1818
+2025-09-29T01:08:33,GET,68d9dbecf105e20b08bb791b,How do I get rid of a girl that is obsess with me?,MISS,0.024,0.0
+2025-09-29T01:08:34,GET,68d9dbecf105e20b08bb79b1,How can i know I.C its bad or good?,MISS,0.0099,0.1091
+2025-09-29T01:08:34,GET,68d9dbecf105e20b08bb7982,why?why?why?,MISS,0.0123,0.0291
+2025-09-29T01:08:34,GET,68d9dbecf105e20b08bb7950,aries girl and a sag boy?,MISS,0.0099,0.0
+2025-09-29T01:08:35,GET,68d9dbecf105e20b08bb78ed,"Why are NECONS so ignorant?, does their recent def",MISS,0.0144,0.0168
+2025-09-29T01:08:35,GET,68d9dbecf105e20b08bb78ea,The same question everyone else asks....?,MISS,0.0183,0.056
+2025-09-29T01:08:36,GET,68d9dbecf105e20b08bb78a2,"I am thinking of moving to Richmond, VA.  How big ",MISS,0.0109,0.0952
+2025-09-29T01:08:36,GET,68d9dbecf105e20b08bb7862,What's the best way to avoid being called on in Cl,HIT,0.001,
+2025-09-29T01:08:36,GET,68d9dbecf105e20b08bb79be,Inserting Images?,MISS,0.0197,0.0219
+2025-09-29T01:08:37,GET,68d9dbecf105e20b08bb77da,Is anybody else here an asexual?,MISS,0.0124,0.1302
+2025-09-29T01:08:39,GET,68d9dbecf105e20b08bb78dd,I am relocating next year probably arouns septembe,MISS,0.0151,0.0526
+2025-09-29T01:08:41,GET,68d9dbecf105e20b08bb7971,how do u like bing?,MISS,0.0134,0.0194
+2025-09-29T01:08:41,GET,68d9dbecf105e20b08bb7824,Has anyone ever heard of a ganglion cyst?,MISS,0.0122,0.049
+2025-09-29T01:08:45,GET,68d9dbecf105e20b08bb7834,When does the sun set today? Feb. 12th 2006?,MISS,0.0166,0.0302
+2025-09-29T01:08:47,GET,68d9dbecf105e20b08bb781a,Christmas song?,MISS,0.0146,0.0986
+2025-09-29T01:08:48,GET,68d9dbecf105e20b08bb78e4,How do you tell someone you like them?,MISS,0.0177,0.1158
+2025-09-29T01:08:48,GET,68d9dbecf105e20b08bb7798,My name is not coming up when I browse in Myspace?,MISS,0.0064,0.1507
+2025-09-29T01:08:50,GET,68d9dbecf105e20b08bb79c5,how do water slides work?,MISS,0.0112,0.08
+2025-09-29T01:08:52,GET,68d9dbecf105e20b08bb78fe,Is there no middle of the road anymore? All of the,MISS,0.0174,0.2335
+2025-09-29T01:08:52,GET,68d9dbecf105e20b08bb77d5,Please help- Child Support!?,MISS,0.0127,0.1182
+2025-09-29T01:08:54,GET,68d9dbecf105e20b08bb79cd,How can i loose alot of weight in a few days?,MISS,0.0112,0.0734
+2025-09-29T01:08:55,GET,68d9dbecf105e20b08bb790f,Multiple part question:  1. Have you seen Fahrenhe,MISS,0.0063,0.1087
+2025-09-29T01:08:56,GET,68d9dbecf105e20b08bb7925,can i get live broadcasts of the fifa world cup on,MISS,0.0094,0.0
+2025-09-29T01:08:56,GET,68d9dbecf105e20b08bb7840,College exchange???????,MISS,0.0072,0.1198
+2025-09-29T01:08:58,GET,68d9dbecf105e20b08bb7801,who is the vest wrestler ever?,MISS,0.0132,0.1243
+2025-09-29T01:08:59,GET,68d9dbecf105e20b08bb77d1,Why do coyotes howl at night?,MISS,0.0106,0.0828
+2025-09-29T01:09:00,GET,68d9dbecf105e20b08bb78bd,Do you have a pet name for your private part?,MISS,0.0137,0.1749
+2025-09-29T01:09:00,GET,68d9dbecf105e20b08bb779b,A child is suffereing from cardiac myopathy and sh,MISS,0.0069,0.2345
+2025-09-29T01:09:02,GET,68d9dbecf105e20b08bb78a5,Who's going to win the Western conference finals?,MISS,0.0099,0.0404
+2025-09-29T01:09:02,GET,68d9dbecf105e20b08bb77cb,Who are the greatest political leaders or historic,HIT,0.0013,
+2025-09-29T01:09:03,GET,68d9dbecf105e20b08bb77c7,Is anyone else offended?,MISS,0.0125,0.1123
+2025-09-29T01:09:06,GET,68d9dbecf105e20b08bb795f,Atheistic beliefs?,MISS,0.0129,0.089
+2025-09-29T01:09:07,GET,68d9dbecf105e20b08bb785f,HOw do you higher your I.Q.?,MISS,0.0117,0.1896
+2025-09-29T01:09:08,GET,68d9dbecf105e20b08bb7957,How many ?,MISS,0.011,0.2093
+2025-09-29T01:09:09,GET,68d9dbecf105e20b08bb7978,how do I let the girl that works next to me know I,MISS,0.0115,0.1975
+2025-09-29T01:09:10,GET,68d9dbecf105e20b08bb7816,mothers day gifts!?,MISS,0.0243,0.0625
+2025-09-29T01:09:11,GET,68d9dbecf105e20b08bb79b5,I have no money and no insurance where can I go in,MISS,0.0096,0.0676
+2025-09-29T01:09:14,GET,68d9dbecf105e20b08bb787f,"I played ""I can't get no satisfaction"" 40,000 time",MISS,0.0056,0.0983
+2025-09-29T01:09:14,GET,68d9dbecf105e20b08bb7901,chest tattoo?,MISS,0.0131,0.0747
+2025-09-29T01:09:14,GET,68d9dbecf105e20b08bb7818,Will an arrest in NY 4 years ago for driving with ,MISS,0.0237,0.1459
+2025-09-29T01:09:15,GET,68d9dbecf105e20b08bb78b2,I like this girl and she like me?,MISS,0.0117,0.1785
+2025-09-29T01:09:17,GET,68d9dbecf105e20b08bb78eb,i want go for higher studies to america in fashion,MISS,0.0156,0.0765
+2025-09-29T01:09:17,GET,68d9dbecf105e20b08bb785e,i have a major health news break thru that involes,MISS,0.0082,0.1365
+2025-09-29T01:09:18,GET,68d9dbecf105e20b08bb77f9,I just bought a Philips SIC4700/37 and have spent ,MISS,0.0161,0.1204
+2025-09-29T01:09:20,GET,68d9dbecf105e20b08bb779c,Is there a Rent Control Law in Texas?,MISS,0.0043,0.2095
+2025-09-29T01:09:20,GET,68d9dbecf105e20b08bb79ba,Does having your AA give you a better shot at a go,MISS,0.0134,0.1546
+2025-09-29T01:09:22,GET,68d9dbecf105e20b08bb77be,Yer memory slips when growin' old! Wanna hear? Did,MISS,0.0108,0.0481
+2025-09-29T01:09:23,GET,68d9dbecf105e20b08bb77c6,"what does "" mi sei manccata"" mean?",MISS,0.0109,0.06
+2025-09-29T01:09:23,GET,68d9dbecf105e20b08bb7974,Why most people think of Mexicans when talking abo,MISS,0.0121,0.2713
+2025-09-29T01:09:25,GET,68d9dbecf105e20b08bb7904,Are we a relection of our President because the ma,MISS,0.0104,0.1905
+2025-09-29T01:09:27,GET,68d9dbecf105e20b08bb7995,what is the worst someone has been burned?? pls re,MISS,0.0114,0.2383
+2025-09-29T01:09:28,GET,68d9dbecf105e20b08bb78f2,who is the top goal scorer in  world cup?,MISS,0.0108,0.0
+2025-09-29T01:09:28,GET,68d9dbecf105e20b08bb7807,How long did God flood the earth in Noah's days?,MISS,0.0071,0.1316
+2025-09-29T01:09:30,GET,68d9dbecf105e20b08bb77ee,Math word problem?,MISS,0.0048,0.1135
+2025-09-29T01:09:31,GET,68d9dbecf105e20b08bb791c,Should they take under God out of the Pledge of Al,MISS,0.0129,0.2966
+2025-09-29T01:09:34,GET,68d9dbecf105e20b08bb78ae,Gout & Prostate - is there a connection?,MISS,0.0104,0.2847
+2025-09-29T01:09:34,GET,68d9dbecf105e20b08bb77c7,Is anyone else offended?,HIT,0.0017,
+2025-09-29T01:09:38,GET,68d9dbecf105e20b08bb7979,are you a terrorist?,MISS,0.0138,0.4282
+2025-09-29T01:09:40,GET,68d9dbecf105e20b08bb7825,immune system attacks or rejects an imcompatible l,MISS,0.0104,0.0233
+2025-09-29T01:09:42,GET,68d9dbecf105e20b08bb794f,"how do you write ""happy thanksgiving"" in italian?",MISS,0.011,0.1205
+2025-09-29T01:09:43,GET,68d9dbecf105e20b08bb799f,What do you think about illegal immigrants??,MISS,0.0125,0.1434
+2025-09-29T01:09:44,GET,68d9dbecf105e20b08bb7837,who is your bet on Manny Pacquiao VS. Oscar Cholol,MISS,0.016,0.0546
+2025-09-29T01:09:45,GET,68d9dbecf105e20b08bb784c,what should I expect to experience in the air forc,MISS,0.0175,0.1737
+2025-09-29T01:09:45,GET,68d9dbecf105e20b08bb7845,"Charlie Chaplin's Modern Time(1936), describes and",MISS,0.0141,0.1402
+2025-09-29T01:09:45,GET,68d9dbecf105e20b08bb77b9,What do you think about going commando?,MISS,0.0139,0.1062
+2025-09-29T01:09:46,GET,68d9dbecf105e20b08bb7969,does anyone no where i can find the fast and furio,MISS,0.0172,0.0325
+2025-09-29T01:09:46,GET,68d9dbecf105e20b08bb78e8,i have window's xp  and i would like to know how g,MISS,0.0094,0.1364
+2025-09-29T01:09:47,GET,68d9dbecf105e20b08bb77b8,What time today..?,MISS,0.0111,0.0
+2025-09-29T01:09:48,GET,68d9dbecf105e20b08bb79b6,How do we fix the Wal-Mart problem ?,MISS,0.0093,0.0548
+2025-09-29T01:09:49,GET,68d9dbecf105e20b08bb79a9,when was you saved?,MISS,0.0109,0.0874
+2025-09-29T01:09:51,GET,68d9dbecf105e20b08bb7795,how do you love?,MISS,0.0123,0.0843
+2025-09-29T01:09:52,GET,68d9dbecf105e20b08bb79af,Buy or Lease?,MISS,0.0098,0.0958
+2025-09-29T01:09:52,GET,68d9dbecf105e20b08bb784e,what do you say if you're a women having phone sex,HIT,0.0009,
+2025-09-29T01:09:54,GET,68d9dbecf105e20b08bb7818,Will an arrest in NY 4 years ago for driving with ,HIT,0.0013,
+2025-09-29T01:09:55,GET,68d9dbecf105e20b08bb793a,AGH! I really need some help with this one..?,MISS,0.012,0.1347
+2025-09-29T01:09:55,GET,68d9dbecf105e20b08bb78f4,Does it actually work on EBay by buying from whole,MISS,0.0122,0.2163
+2025-09-29T01:09:56,GET,68d9dbecf105e20b08bb7903,what's a ziehl-nielson agar?,MISS,0.0055,0.1191
+2025-09-29T01:09:57,GET,68d9dbecf105e20b08bb7969,does anyone no where i can find the fast and furio,HIT,0.0016,
+2025-09-29T01:09:57,GET,68d9dbecf105e20b08bb78b8,Find the volume of 1 mole of H2 gas at STP in the ,MISS,0.0142,0.0739
+2025-09-29T01:09:58,GET,68d9dbecf105e20b08bb78df,Prononstics pour la finale-retour de cette après-m,MISS,0.011,0.0
+2025-09-29T01:09:59,GET,68d9dbecf105e20b08bb7907,what is your favorite gemstone?,MISS,0.0086,0.0
+2025-09-29T01:09:59,GET,68d9dbecf105e20b08bb7969,does anyone no where i can find the fast and furio,HIT,0.0009,
+2025-09-29T01:10:03,GET,68d9dbecf105e20b08bb797f,information on refrigeration by heating?,MISS,0.0056,0.0656
+2025-09-29T01:10:03,GET,68d9dbecf105e20b08bb780a,which is the  MOST HATED TEAM in the premiership.?,MISS,0.0049,0.1267
+2025-09-29T01:10:03,GET,68d9dbecf105e20b08bb7811,is jesus the God dead?,MISS,0.0094,0.2335
+2025-09-29T01:10:03,GET,68d9dbecf105e20b08bb78b9,Tell me how to make a normal folder that requires ,MISS,0.0069,0.1777
+2025-09-29T01:10:05,GET,68d9dbecf105e20b08bb789e,what machines do i need to start a wood manufactur,HIT,0.0021,
+2025-09-29T01:10:05,GET,68d9dbecf105e20b08bb78e2,What is the grossest most nasiest thing you have e,MISS,0.0107,0.0
+2025-09-29T01:10:07,GET,68d9dbecf105e20b08bb79bc,where can i find motivating stories(personality de,MISS,0.0172,0.0166
+2025-09-29T01:10:08,GET,68d9dbecf105e20b08bb7817,I need the name of a sub division in waukegan how ,MISS,0.0095,0.0535
+2025-09-29T01:10:09,GET,68d9dbecf105e20b08bb77b7,"who sings the song that goes "" All I want to do is",MISS,0.0098,0.1828
+2025-09-29T01:10:09,GET,68d9dbecf105e20b08bb78be,How would the human body be affected if someone co,MISS,0.0063,0.1449
+2025-09-29T01:10:10,GET,68d9dbecf105e20b08bb77a4,"Where can I go for Valentine's Day, other than on ",HIT,0.0007,
+2025-09-29T01:10:10,GET,68d9dbecf105e20b08bb788e,"What is the best thing for a sun burn, besides alo",MISS,0.007,0.0
+2025-09-29T01:10:10,GET,68d9dbecf105e20b08bb77c3,If you know absolutely that a person has broken th,MISS,0.0123,0.0
+2025-09-29T01:10:11,GET,68d9dbecf105e20b08bb77aa,What does an English really look like?,MISS,0.0217,0.1618
+2025-09-29T01:10:13,GET,68d9dbecf105e20b08bb7874,"If you think someone is self harming, what should ",HIT,0.0012,
+2025-09-29T01:10:13,GET,68d9dbecf105e20b08bb77cd,do you believed in destiny?,MISS,0.0089,0.0198
+2025-09-29T01:10:13,GET,68d9dbecf105e20b08bb77fd,looking for episodes of tv shows with female charc,MISS,0.0136,0.0304
+2025-09-29T01:10:13,GET,68d9dbecf105e20b08bb788d,If eosinphils count in blood test is 22% against a,MISS,0.0158,0.2633
+2025-09-29T01:10:13,GET,68d9dbecf105e20b08bb7813,Is Disney going to come out with a fairy tail ever,HIT,0.0015,
+2025-09-29T01:10:14,GET,68d9dbecf105e20b08bb78e5,Why are businesses divided into functional areas?,MISS,0.0102,0.1618
+2025-09-29T01:10:15,GET,68d9dbecf105e20b08bb793e,i want to calculate the velocity in m/s of all the,MISS,0.0172,0.3047
+2025-09-29T01:10:17,GET,68d9dbecf105e20b08bb77c0,"I want to start a business in Norcross, GA. Could ",MISS,0.0127,0.2072
+2025-09-29T01:10:20,GET,68d9dbecf105e20b08bb7921,do you know where i can find 8 oz bottles for baby,MISS,0.0111,0.127
+2025-09-29T01:10:22,GET,68d9dbecf105e20b08bb7953,brown discharge and left side ovary area pain?,MISS,0.0092,0.2733
+2025-09-29T01:10:24,GET,68d9dbecf105e20b08bb79c8,How  do you caculate the [h+] of KOH?,MISS,0.0064,0.0132
+2025-09-29T01:10:24,GET,68d9dbecf105e20b08bb7826,How can one know that God did call him/her to be a,MISS,0.0202,0.1042
+2025-09-29T01:10:25,GET,68d9dbecf105e20b08bb7890,Who to start?,MISS,0.0123,0.2355
+2025-09-29T01:10:29,GET,68d9dbecf105e20b08bb7860,TRIVIA--------->What was the largest destroyer in ,MISS,0.0181,0.303
+2025-09-29T01:10:30,GET,68d9dbecf105e20b08bb77d9,when can a footballer have a testimonial match ?,MISS,0.0101,0.1812
+2025-09-29T01:10:31,GET,68d9dbecf105e20b08bb781d,this is an actual riddle can you figure it out?,MISS,0.0047,0.1362
+2025-09-29T01:10:32,GET,68d9dbecf105e20b08bb77ba,what are the rates for weight reduction from sliml,MISS,0.0181,0.0241
+2025-09-29T01:10:33,GET,68d9dbecf105e20b08bb77cf,Toilet Pain?,MISS,0.02,0.0
+2025-09-29T01:10:33,GET,68d9dbecf105e20b08bb779e,Is there a downside to taking a reverse mortage?,MISS,0.0092,0.1952
+2025-09-29T01:10:33,GET,68d9dbecf105e20b08bb7875,IT is wide who knows the best branch and most earn,MISS,0.018,0.253
+2025-09-29T01:10:34,GET,68d9dbecf105e20b08bb7952,Do the amici curiae just volunteer to enlighten th,MISS,0.0188,0.3568
+2025-09-29T01:10:34,GET,68d9dbecf105e20b08bb786c,How do you make a girl interested in you?,MISS,0.0183,0.4037
+2025-09-29T01:10:35,GET,68d9dbecf105e20b08bb781f,has anybody???,MISS,0.0065,0.0
+2025-09-29T01:10:37,GET,68d9dbecf105e20b08bb78f2,who is the top goal scorer in  world cup?,HIT,0.0012,
+2025-09-29T01:10:37,GET,68d9dbecf105e20b08bb77b0,is getting your GED hard..?,MISS,0.0116,0.031
+2025-09-29T01:10:38,GET,68d9dbecf105e20b08bb7977,Loosing weight on Birth Control?,MISS,0.0142,0.1721
+2025-09-29T01:10:38,GET,68d9dbecf105e20b08bb77cd,do you believed in destiny?,HIT,0.0007,
+2025-09-29T01:10:38,GET,68d9dbecf105e20b08bb79a2,what planet rotates on it's axis?,MISS,0.0097,0.0561
+2025-09-29T01:10:40,GET,68d9dbecf105e20b08bb779e,Is there a downside to taking a reverse mortage?,HIT,0.0013,
+2025-09-29T01:10:40,GET,68d9dbecf105e20b08bb7840,College exchange???????,HIT,0.0017,
+2025-09-29T01:10:41,GET,68d9dbecf105e20b08bb788b,how does the department of defence relate to this?,MISS,0.0142,0.1232
+2025-09-29T01:10:45,GET,68d9dbecf105e20b08bb78f7,product development in biotech?,MISS,0.0163,0.0
+2025-09-29T01:10:46,GET,68d9dbecf105e20b08bb7951,"When starting a budget, what % for housing?",MISS,0.0142,0.0577
+2025-09-29T01:10:46,GET,68d9dbecf105e20b08bb78a4,How similar is Australian Employment Law to Englis,MISS,0.0055,0.0248
+2025-09-29T01:10:46,GET,68d9dbecf105e20b08bb789a,do u think full matal alchemist should have had mo,MISS,0.0063,0.0522
+2025-09-29T01:10:46,GET,68d9dbecf105e20b08bb7890,Who to start?,HIT,0.0005,
+2025-09-29T01:10:46,GET,68d9dbecf105e20b08bb79c2,What song did the following words come from?,MISS,0.0135,0.0428
+2025-09-29T01:10:47,GET,68d9dbecf105e20b08bb788d,If eosinphils count in blood test is 22% against a,HIT,0.0016,
+2025-09-29T01:10:48,GET,68d9dbecf105e20b08bb786b,"i feel blue, what can i do?",MISS,0.0063,0.0936
+2025-09-29T01:10:52,GET,68d9dbecf105e20b08bb7961,Who(or what) were you in your past life?,MISS,0.0088,0.0599
+2025-09-29T01:10:53,GET,68d9dbecf105e20b08bb79c8,How  do you caculate the [h+] of KOH?,HIT,0.0016,
+2025-09-29T01:10:53,GET,68d9dbecf105e20b08bb791c,Should they take under God out of the Pledge of Al,HIT,0.0017,
+2025-09-29T01:10:53,GET,68d9dbecf105e20b08bb7834,When does the sun set today? Feb. 12th 2006?,HIT,0.001,
+2025-09-29T01:10:55,GET,68d9dbecf105e20b08bb7820,Need advice on fitness and protein products! HELP!,MISS,0.0134,0.13
+2025-09-29T01:10:56,GET,68d9dbecf105e20b08bb78bb,"i want to loose my virginty, but i don't want to h",MISS,0.0135,0.2241
+2025-09-29T01:10:57,GET,68d9dbecf105e20b08bb799a,Do you want to go to grand parade?,MISS,0.0127,0.0338
+2025-09-29T01:11:02,GET,68d9dbecf105e20b08bb77d5,Please help- Child Support!?,HIT,0.0008,
+2025-09-29T01:11:03,GET,68d9dbecf105e20b08bb7830,Who was the first man who orbited the earth?,MISS,0.0052,0.3872
+2025-09-29T01:11:04,GET,68d9dbecf105e20b08bb7964,Weight loss and acne tied together?,MISS,0.0084,0.1002
+2025-09-29T01:11:05,GET,68d9dbecf105e20b08bb79c7,I get migranes and I feel really alone sometimes b,MISS,0.0044,0.0356
+2025-09-29T01:11:09,GET,68d9dbecf105e20b08bb78f9,what do you think is the major factor for the resu,MISS,0.012,0.3266

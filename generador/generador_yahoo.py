@@ -17,7 +17,7 @@ def uniform_interarrival(low, high):
 
 
 
-def query_system(payload, host='localhost', port=5000):
+def query_system(payload, host='mongo', port=5000):
     try:
         with socket.create_connection((host, port), timeout=5) as sock:
             sock.sendall((json.dumps(payload) + "\n").encode())
@@ -117,4 +117,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     params = {'lmbda': args.lmbda, 'low': args.low, 'high': args.high}
-    run_generator(args.dist, params, args.n, args.mongo, args.db, args.coll, args.cache_host, args.cache_port)
+    print(f"[Generador] Iniciando en modo continuo ({args.dist})...")
+    while True:
+        run_generator(args.dist, params, args.n, args.mongo, args.db, args.coll, args.cache_host, args.cache_port)

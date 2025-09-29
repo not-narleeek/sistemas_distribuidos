@@ -30,7 +30,7 @@ services:
     container_name: cache
     ports:
       - "5000:5000"
-    command: ["--policy", "lru", "--size", "500", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--dummy_host", "llm", "--dummy_port", "6000"]
+    command: ["--policy", "lru", "--size", "500", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--dummy_host", "dummy_LLM", "--dummy_port", "6000"]
     depends_on:
       - mongo
       - llm

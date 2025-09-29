@@ -72,7 +72,7 @@ class LFUCache(CacheBase):
         self.freq[key] += 1
 
 
-def query_dummy(payload, host="localhost", port=6000):
+def query_dummy(payload, host="mongo", port=6000):
     try:
         with socket.create_connection((host, port), timeout=10) as sock:
             sock.sendall((json.dumps(payload) + "\n").encode())
@@ -105,7 +105,7 @@ def main():
     parser.add_argument('--db', default='yahoo_db')
     parser.add_argument('--coll', default='questions')
     parser.add_argument('--port', type=int, default=5000)
-    parser.add_argument('--dummy_host', default="localhost")
+    parser.add_argument('--dummy_host', default="mongo")
     parser.add_argument('--dummy_port', type=int, default=6000)
     args = parser.parse_args()
 
