@@ -109,7 +109,7 @@ if __name__ == "__main__":
     parser.add_argument('--lmbda', type=float, default=1.0)
     parser.add_argument('--low', type=float, default=0.5)
     parser.add_argument('--high', type=float, default=2.0)
-    parser.add_argument('--n', type=int, default=1000)
+    parser.add_argument('--n', type=int, default=8000)
     parser.add_argument('--mongo', type=str, default="mongodb://mongo:27017/")
     parser.add_argument('--db', type=str, default="yahoo_db")
     parser.add_argument('--coll', type=str, default="questions")
