@@ -30,7 +30,7 @@ services:
     container_name: cache
     ports:
       - "5000:5000"
-    command: ["--policy", "lru", "--size", "500", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--dummy_host", "dummy_LLM", "--dummy_port", "6000"]
+    command: ["--policy", "fifo", "--size", "50", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--dummy_host", "dummy_LLM", "--dummy_port", "6000"]
     depends_on:
       - mongo
       - llm
@@ -38,7 +38,7 @@ services:
   generador:
     build: ./generador
     container_name: generador_yahoo
-    command: ["--dist", "poisson", "--n", "1000", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--cache_host", "cache", "--cache_port", "5000"]
+    command: ["--dist", "uniform", "--n", "1000", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--cache_host", "cache", "--cache_port", "5000"]
     depends_on:
       - cache
 

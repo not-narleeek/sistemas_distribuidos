@@ -1,0 +1,180 @@
+timestamp,operation,id,title,status,latency,score
+2025-09-29T21:03:23,GET,68daef34bdf51689765eeacc,My legs won't stop itching!?,MISS,0.0143,0.0324
+2025-09-29T21:03:24,GET,68daef34bdf51689765ef063,"In German letters, written with a comma, is the fi",MISS,0.0144,0.1793
+2025-09-29T21:03:25,GET,68daef34bdf51689765ee1cc,What's the best way to get rid of sinus headache?,MISS,0.0167,0.0841
+2025-09-29T21:03:27,GET,68daef34bdf51689765ee31f,what do you think is the major factor for the resu,MISS,0.0122,0.3266
+2025-09-29T21:03:28,GET,68daef34bdf51689765ef25c,i am a engineerin student in IT from mumbai would ,MISS,0.0143,0.074
+2025-09-29T21:03:30,GET,68daef34bdf51689765ee85e,Was anyone shocked by Stacy's elimation from Danci,MISS,0.0138,0.0917
+2025-09-29T21:03:31,GET,68daef34bdf51689765f0545,black snake with orange belly what kind?,MISS,0.0118,0.1114
+2025-09-29T21:03:31,GET,68daef34bdf51689765efb93,it would be so funny....?,MISS,0.0112,0.0716
+2025-09-29T21:03:33,GET,68daef34bdf51689765ee5e4,did thomas jefferson have a baby by a slave?,MISS,0.0116,0.1944
+2025-09-29T21:03:34,GET,68daef34bdf51689765f084b,A Good Pick -Up Line?,MISS,0.0113,0.0495
+2025-09-29T21:03:35,GET,68daef34bdf51689765ef319,Is it OK if you think he's the one -- when you're ,MISS,0.0078,0.2439
+2025-09-29T21:03:36,GET,68daef34bdf51689765f0265,What University in Scotland would be the best for ,MISS,0.0122,0.1252
+2025-09-29T21:03:38,GET,68daef34bdf51689765eedf5,Formula for finding the area of quadrilaterals?,MISS,0.0121,0.3188
+2025-09-29T21:03:39,GET,68daef34bdf51689765ef66f,Racy's Department Store... case in Management Scie,MISS,0.0101,0.0
+2025-09-29T21:03:40,GET,68daef34bdf51689765f073c,hair falling geeeeeeeeeeeee...............?,MISS,0.0123,0.0913
+2025-09-29T21:03:42,GET,68daef34bdf51689765f0392,A.L.F....animal liberation front?,MISS,0.0126,0.1589
+2025-09-29T21:03:43,GET,68daef34bdf51689765ef6fe,How can I know who is viewing Myspace?,MISS,0.0118,0.172
+2025-09-29T21:03:45,GET,68daef34bdf51689765eeaff,Pain medication stolen - what happens now?,MISS,0.0117,0.0169
+2025-09-29T21:03:47,GET,68daef34bdf51689765eedc6,"my mother took mney from me and wont pay me back, ",MISS,0.0117,0.3268
+2025-09-29T21:03:47,GET,68daef34bdf51689765f0161,Who can offer me a job to teach Chinese in China?,MISS,0.0121,0.0
+2025-09-29T21:03:48,GET,68daef34bdf51689765f00c8,Does anyone out there actually still like Ann Coul,MISS,0.0117,0.1214
+2025-09-29T21:03:49,GET,68daef34bdf51689765efe96,tell me...?,MISS,0.0141,0.0788
+2025-09-29T21:03:50,GET,68daef34bdf51689765efc77,do you have a friendster account?,MISS,0.0146,0.0
+2025-09-29T21:03:52,GET,68daef34bdf51689765ee9ee,Do you think that it is all right for a 18 year ol,MISS,0.0145,0.1009
+2025-09-29T21:03:53,GET,68daef34bdf51689765ee888,How Does Someone File A Judgement Against Your Wag,MISS,0.0143,0.0985
+2025-09-29T21:03:54,GET,68daef34bdf51689765eee2e,when will linkin park have a new cd out?,MISS,0.0129,0.1393
+2025-09-29T21:03:56,GET,68daef34bdf51689765ef058,I am looking to buy a digital camera. I saw one th,MISS,0.0124,0.2732
+2025-09-29T21:03:57,GET,68daef34bdf51689765ef068,fear of doctors?,MISS,0.0142,0.1201
+2025-09-29T21:03:59,GET,68daef34bdf51689765ef9a1,christmas gift help?,MISS,0.0115,0.0
+2025-09-29T21:04:00,GET,68daef34bdf51689765f075d,What Does It Mean?,MISS,0.014,0.1383
+2025-09-29T21:04:01,GET,68daef34bdf51689765efae3,Question on reliablity of the Bushmaster .223 Rifl,MISS,0.0117,0.2942
+2025-09-29T21:04:02,GET,68daef34bdf51689765ef5e4,"Music: Looking for a song, i think the chorus lyri",MISS,0.0122,0.1025
+2025-09-29T21:04:04,GET,68daef34bdf51689765ee614,How may I help you?,MISS,0.0114,0.1152
+2025-09-29T21:04:05,GET,68daef34bdf51689765ee9af,How do you choose the right martial-arts program t,MISS,0.0113,0.1196
+2025-09-29T21:04:07,GET,68daef34bdf51689765ef535,how can i become beautiful?,MISS,0.0117,0.0596
+2025-09-29T21:04:08,GET,68daef34bdf51689765ef2d4,Wouldnt it  be great to live in hogwarts? (harry p,MISS,0.0146,0.1733
+2025-09-29T21:04:08,GET,68daef34bdf51689765eede3,What should I do before starting a school test?,MISS,0.0042,0.1161
+2025-09-29T21:04:10,GET,68daef34bdf51689765f0331,How do you find motivation when you have none?,MISS,0.0116,0.1782
+2025-09-29T21:04:11,GET,68daef34bdf51689765ef2d3,How could I get a job in espionage?,MISS,0.0113,0.0694
+2025-09-29T21:04:13,GET,68daef34bdf51689765eed03,How do i get my bf 2 call me?,MISS,0.0137,0.0565
+2025-09-29T21:04:14,GET,68daef34bdf51689765ee245,What kind of schooling do you have to have to beco,MISS,0.0121,0.173
+2025-09-29T21:04:16,GET,68daef34bdf51689765eff47,How is Opal seperated from the ore?,MISS,0.0117,0.2071
+2025-09-29T21:04:18,GET,68daef34bdf51689765eea5d,Working at 911.?,MISS,0.011,0.1591
+2025-09-29T21:04:19,GET,68daef34bdf51689765ee8ac,do herpes breakouts always come in multiples and h,MISS,0.0119,0.1631
+2025-09-29T21:04:20,GET,68daef34bdf51689765ee7b1,Does nobady know how tu put Free Ringtones on LG V,MISS,0.0135,0.0562
+2025-09-29T21:04:21,GET,68daef34bdf51689765ee4f1,I asked to a Chrıst:İs Budha a God?He said no.I as,MISS,0.012,0.3775
+2025-09-29T21:04:22,GET,68daef34bdf51689765ef4ac,Does anyone ever not post a question fearing a kno,MISS,0.0119,0.1109
+2025-09-29T21:04:24,GET,68daef34bdf51689765efc2d,I get a rash on my finger every time I put on my g,MISS,0.0117,0.0419
+2025-09-29T21:04:25,GET,68daef34bdf51689765f070b,What is the best movie of all time?,MISS,0.0117,0.0
+2025-09-29T21:04:27,GET,68daef34bdf51689765ef60a,how do you know if you like someone or not?,MISS,0.0156,0.1804
+2025-09-29T21:04:28,GET,68daef34bdf51689765eef21,what is the future of M.SC biotechnology?,MISS,0.0164,0.2644
+2025-09-29T21:04:29,GET,68daef34bdf51689765f0068,we need to adjust the heavy structure after erecte,MISS,0.0129,0.1227
+2025-09-29T21:04:30,GET,68daef34bdf51689765ef715,So James Bond is trying to infiltrate a club...?,MISS,0.0127,0.0339
+2025-09-29T21:04:32,GET,68daef34bdf51689765f0551,Do my bf and i have too many differences to work?,MISS,0.0139,0.0
+2025-09-29T21:04:33,GET,68daef34bdf51689765ee28b,How a Country like India breath with a frail econo,MISS,0.0157,0.0779
+2025-09-29T21:04:35,GET,68daef34bdf51689765eed5b,In what year did John R. Taylor die?  A picture of,MISS,0.012,0.1427
+2025-09-29T21:04:36,GET,68daef34bdf51689765ef337,Do you Believe In Ghosts and other supernatural st,MISS,0.0117,0.0658
+2025-09-29T21:04:36,GET,68daef34bdf51689765ee888,How Does Someone File A Judgement Against Your Wag,HIT,0.0016,
+2025-09-29T21:04:38,GET,68daef34bdf51689765f00c0,Speed of heating up water?,MISS,0.0161,0.1377
+2025-09-29T21:04:40,GET,68daef34bdf51689765ef41d,What are the different parts of a volcano?,MISS,0.0159,0.1319
+2025-09-29T21:04:41,GET,68daef34bdf51689765eede4,what is the t-value in t-test?,MISS,0.0138,0.4588
+2025-09-29T21:04:42,GET,68daef34bdf51689765ef47f,My friend broke up with her man like a month ago s,MISS,0.014,0.1756
+2025-09-29T21:04:44,GET,68daef34bdf51689765f026d,how i can kiss a man perfecttly?!!?,MISS,0.012,0.0
+2025-09-29T21:04:44,GET,68daef34bdf51689765ef150,Would you consider this a Maddox ripoff?,MISS,0.0122,0.0
+2025-09-29T21:04:46,GET,68daef34bdf51689765eebd2,where would you find these words...?,MISS,0.0167,0.2873
+2025-09-29T21:04:47,GET,68daef34bdf51689765ef55b,Do you have a way to make us laugh?,MISS,0.0184,0.0884
+2025-09-29T21:04:47,GET,68daef34bdf51689765f065a,Will Vice President Dick Cheney run for President ,MISS,0.0164,0.1076
+2025-09-29T21:04:48,GET,68daef34bdf51689765efbb4,What is a good free way workout to boost your vert,MISS,0.0125,0.0674
+2025-09-29T21:04:49,GET,68daef34bdf51689765ee7b4,http://tinyurl.com/pqzpe  hey Do you think this vi,MISS,0.0127,0.1573
+2025-09-29T21:04:50,GET,68daef34bdf51689765efaf4,how do u stop aa haunting?,MISS,0.0134,0.3719
+2025-09-29T21:04:52,GET,68daef34bdf51689765eef6e,My mom doesn't want me to marry someone who's fami,MISS,0.0124,0.0447
+2025-09-29T21:04:54,GET,68daef34bdf51689765ee9d5,Why can I not get into Canada?,MISS,0.0138,0.0822
+2025-09-29T21:04:54,GET,68daef34bdf51689765ef2e4,Why don't we reclaim land in Country Parks?,MISS,0.0118,0.1784
+2025-09-29T21:04:55,GET,68daef34bdf51689765eea94,What is the process for becoming an astronomer (de,MISS,0.0118,0.1334
+2025-09-29T21:04:57,GET,68daef34bdf51689765ee515,how do you write a literary criticism?,MISS,0.0119,0.1857
+2025-09-29T21:04:58,GET,68daef34bdf51689765ee87a,where can i get the download to motorola modem sb5,MISS,0.0136,0.1854
+2025-09-29T21:04:59,GET,68daef34bdf51689765eec6d,Nude beaches in Galveston?,MISS,0.0097,0.1031
+2025-09-29T21:05:01,GET,68daef34bdf51689765eeb84,How  do you search news discussion archives?,MISS,0.0118,0.1217
+2025-09-29T21:05:02,GET,68daef34bdf51689765eea02,What causes someone to look younger than his age? ,MISS,0.0113,0.1458
+2025-09-29T21:05:04,GET,68daef34bdf51689765ee95b,PLEEEZ help i really wanna edit video blogs like o,MISS,0.0145,0.0707
+2025-09-29T21:05:05,GET,68daef34bdf51689765ef930,I thought i was pregnant but then I got my period ,MISS,0.0114,0.1749
+2025-09-29T21:05:06,GET,68daef34bdf51689765f055f,Do guys like to be woke up in the middle of the ni,MISS,0.0113,0.208
+2025-09-29T21:05:07,GET,68daef34bdf51689765f0524,girls only?,MISS,0.0108,0.091
+2025-09-29T21:05:08,GET,68daef34bdf51689765ef100,Computer Gamer Tech Help needed!  Please I just wa,MISS,0.011,0.0743
+2025-09-29T21:05:09,GET,68daef34bdf51689765f01d7,Is there a Tarot reader in KY around the the 40121,MISS,0.0135,0.0795
+2025-09-29T21:05:11,GET,68daef34bdf51689765ef12d,"I am just starting credit ,I need to know what is ",MISS,0.0148,0.209
+2025-09-29T21:05:12,GET,68daef34bdf51689765ef0a6,I would like to know more about the intended use o,MISS,0.0107,0.1195
+2025-09-29T21:05:14,GET,68daef34bdf51689765ef546,what is associative learning?,MISS,0.0136,0.1413
+2025-09-29T21:05:15,GET,68daef34bdf51689765f0117,If you could choose to be a Vampire Or Werewolf wh,MISS,0.011,0.06
+2025-09-29T21:05:17,GET,68daef34bdf51689765ef0f5,When the distance between unlike poles of two magn,MISS,0.0117,0.3414
+2025-09-29T21:05:19,GET,68daef34bdf51689765eead1,Fantasy Football--Who should I start this week?,MISS,0.0111,0.0637
+2025-09-29T21:05:20,GET,68daef34bdf51689765ee20a,Math word problem?,MISS,0.0134,0.1135
+2025-09-29T21:05:21,GET,68daef34bdf51689765ef887,teeth probs?,MISS,0.0148,0.2203
+2025-09-29T21:05:22,GET,68daef34bdf51689765ee40b,Why do liberals feel the need to be so rude?,MISS,0.0113,0.2945
+2025-09-29T21:05:23,GET,68daef34bdf51689765f0035,Why is Linux better at running lots of threads tha,MISS,0.0114,0.1347
+2025-09-29T21:05:24,GET,68daef34bdf51689765ee547,The top 5 base ball players of all time.?,MISS,0.0119,0.1215
+2025-09-29T21:05:26,GET,68daef34bdf51689765f0524,girls only?,HIT,0.0015,
+2025-09-29T21:05:28,GET,68daef34bdf51689765ef2d2,dose any one in this  world get were they feel lik,MISS,0.0118,0.1645
+2025-09-29T21:05:29,GET,68daef34bdf51689765eee3d,can u tell me who was the winner of last worldcup ,MISS,0.0112,0.0464
+2025-09-29T21:05:30,GET,68daef34bdf51689765f0537,Why  me what did i do ????,MISS,0.0116,0.0262
+2025-09-29T21:05:31,GET,68daef34bdf51689765eeeeb,Where does space end?,MISS,0.0117,0.0
+2025-09-29T21:05:32,GET,68daef34bdf51689765ee60b,Are Christians playing the better safe then sorrry,MISS,0.0116,0.1988
+2025-09-29T21:05:34,GET,68daef34bdf51689765ef83d,Who agrees that this Season's Premiership Ball is ,MISS,0.0111,0.1883
+2025-09-29T21:05:35,GET,68daef34bdf51689765ef695,Science ? Please help!?,MISS,0.0134,0.0773
+2025-09-29T21:05:37,GET,68daef34bdf51689765eecfd,Why is the Death Penalty bad?,MISS,0.0118,0.365
+2025-09-29T21:05:38,GET,68daef34bdf51689765eec91,Every few months I wake up in the middle of the ni,MISS,0.0109,0.0215
+2025-09-29T21:05:40,GET,68daef34bdf51689765ef3f9,would libra girl be compatabile with me.. a Cancer,MISS,0.0134,0.0308
+2025-09-29T21:05:42,GET,68daef34bdf51689765ef6de,The direction of the buoyant force on an object pl,MISS,0.011,0.3551
+2025-09-29T21:05:43,GET,68daef34bdf51689765f07ff,What is a yoshi look and how I make a yoshi?,MISS,0.0121,0.0919
+2025-09-29T21:05:44,GET,68daef34bdf51689765eeb08,what % of boxers get sometype of brain/body effect,MISS,0.0066,0.1578
+2025-09-29T21:05:45,GET,68daef34bdf51689765ee7f4,"Wuts more fuel-effishent, my H-2 Hummer limo, or m",MISS,0.0135,0.0
+2025-09-29T21:05:46,GET,68daef34bdf51689765efd77,My wife have had sex frequently b4 marrying me....,MISS,0.0108,0.3379
+2025-09-29T21:05:48,GET,68daef34bdf51689765f0265,What University in Scotland would be the best for ,MISS,0.0113,0.1252
+2025-09-29T21:05:49,GET,68daef34bdf51689765ef687,In the Military the African American race is consi,MISS,0.0135,0.1829
+2025-09-29T21:05:51,GET,68daef34bdf51689765ee743,what is the solar angle of the sun at this time of,MISS,0.012,0.0
+2025-09-29T21:05:52,GET,68daef34bdf51689765ef106,who played with jersey number 17 for Italian Team ,MISS,0.0117,0.0
+2025-09-29T21:05:53,GET,68daef34bdf51689765eec32,Convert the following from standard form to trigon,MISS,0.0113,0.0789
+2025-09-29T21:05:55,GET,68daef34bdf51689765f01da,what do i do?,MISS,0.011,0.0759
+2025-09-29T21:05:55,GET,68daef34bdf51689765f003f,do both parties favor big bussines?,MISS,0.0137,0.2006
+2025-09-29T21:05:56,GET,68daef34bdf51689765f052a,man chris brown- yo excuse me miss...is going on a,MISS,0.0131,0.0245
+2025-09-29T21:05:58,GET,68daef34bdf51689765f0607,What does an 8-ball go for in your area?,MISS,0.0127,0.0
+2025-09-29T21:06:00,GET,68daef34bdf51689765ef2d9,hey do you love syndey white?,MISS,0.0138,0.0
+2025-09-29T21:06:02,GET,68daef34bdf51689765ef09f,while downloading something from rapidshare.de it ,MISS,0.0142,0.0984
+2025-09-29T21:06:03,GET,68daef34bdf51689765eedab,how to use 2 webcams at once?,MISS,0.0111,0.085
+2025-09-29T21:06:04,GET,68daef34bdf51689765eeb24,When did Japanese prime minister come to China to ,MISS,0.0117,0.0
+2025-09-29T21:06:05,GET,68daef34bdf51689765ef957,well you help?,MISS,0.0113,0.0492
+2025-09-29T21:06:06,GET,68daef34bdf51689765ef3a1,Can anyone help me with student VISA to UK?,MISS,0.011,0.0867
+2025-09-29T21:06:07,GET,68daef34bdf51689765efb69,I have a white tongue what does it mean how can I ,MISS,0.0113,0.0437
+2025-09-29T21:06:09,GET,68daef34bdf51689765ee264,what is your favorite quote?,MISS,0.0131,0.0
+2025-09-29T21:06:10,GET,68daef34bdf51689765ef32a,how do i move my computer to another room?,MISS,0.0184,0.1966
+2025-09-29T21:06:11,GET,68daef34bdf51689765ee6a1,Would you do something nice for a complete strange,MISS,0.0095,0.0
+2025-09-29T21:06:13,GET,68daef34bdf51689765ef1dd,I am being sued by my landlord. I want to find out,MISS,0.012,0.0412
+2025-09-29T21:06:14,GET,68daef34bdf51689765ef461,Architecture with A.A degree or Architectural Engi,MISS,0.01,0.2431
+2025-09-29T21:06:15,GET,68daef34bdf51689765ef690,Is there a natural cure for menstrual cramps?,MISS,0.012,0.0842
+2025-09-29T21:06:17,GET,68daef34bdf51689765ef2df,Chicago baseball fans only!!!!!!!?,MISS,0.0112,0.1047
+2025-09-29T21:06:18,GET,68daef34bdf51689765f01fe,How can people still support President Bush?,MISS,0.0122,0.0576
+2025-09-29T21:06:19,GET,68daef34bdf51689765efabb,Exceed credit limit on a credit card by a lot?,MISS,0.0116,0.0888
+2025-09-29T21:06:21,GET,68daef34bdf51689765ef250,disadvantage recruiting online?,MISS,0.0109,0.0719
+2025-09-29T21:06:22,GET,68daef34bdf51689765eec36,I'm a lot smarter than I come off... what do I do?,MISS,0.0112,0.1141
+2025-09-29T21:06:24,GET,68daef34bdf51689765efa8c,I want to know what the different btween the Repub,MISS,0.0114,0.2783
+2025-09-29T21:06:25,GET,68daef34bdf51689765ef3c2,Am I WRONG for dating my friend's 2 year CRUSH????,MISS,0.0122,0.1224
+2025-09-29T21:06:26,GET,68daef34bdf51689765ef028,my friend is ready to kill him self help?,MISS,0.011,0.3392
+2025-09-29T21:06:28,GET,68daef34bdf51689765ee61f,What are you if someone calls you a Lodo?,MISS,0.0135,0.0384
+2025-09-29T21:06:28,GET,68daef34bdf51689765efce6,information about bacterium?,MISS,0.0114,0.0362
+2025-09-29T21:06:29,GET,68daef34bdf51689765ef08b,How can I make it not hurt so bad?,MISS,0.0117,0.0975
+2025-09-29T21:06:30,GET,68daef34bdf51689765ef3f5,Is this girl into me ?,MISS,0.008,0.0
+2025-09-29T21:06:31,GET,68daef34bdf51689765f0494,what are coladapins?,MISS,0.0109,0.0701
+2025-09-29T21:06:33,GET,68daef34bdf51689765f0762,what goverment do u sopport?,MISS,0.0109,0.0481
+2025-09-29T21:06:34,GET,68daef34bdf51689765f087a,Do you think this is WEIRD???,MISS,0.0112,0.0588
+2025-09-29T21:06:35,GET,68daef34bdf51689765ef327,Do you really care if the seat is left up or down?,MISS,0.0112,0.0503
+2025-09-29T21:06:37,GET,68daef34bdf51689765f0042,Whats a good community service project for my high,MISS,0.0114,0.0
+2025-09-29T21:06:38,GET,68daef34bdf51689765eea35,abduction by a man in black from your bed then tra,MISS,0.0136,0.1181
+2025-09-29T21:06:39,GET,68daef34bdf51689765eeab6,Who is your Favorite CNN Anchor?,MISS,0.0128,0.0
+2025-09-29T21:06:41,GET,68daef34bdf51689765efe06,Everybody HATES Raymond!?,MISS,0.0107,0.0957
+2025-09-29T21:06:42,GET,68daef34bdf51689765ee623,5 yrs old girl miss her mother badly and cry every,MISS,0.0111,0.0537
+2025-09-29T21:06:43,GET,68daef34bdf51689765eecac,I am moving to live in a cheap motel- does my boyf,MISS,0.0144,0.103
+2025-09-29T21:06:44,GET,68daef34bdf51689765f00cb,should i ask her to join me or no?????,MISS,0.0049,0.1123
+2025-09-29T21:06:45,GET,68daef34bdf51689765f050b,"I need to know what ""goatfooted"" and ""puddle-wonde",MISS,0.0116,0.157
+2025-09-29T21:06:46,GET,68daef34bdf51689765ee728,Is the speed of internet access through TATA Indic,MISS,0.0114,0.0537
+2025-09-29T21:06:47,GET,68daef34bdf51689765efa75,what fabrics are most flame resistant?,MISS,0.0106,0.1152
+2025-09-29T21:06:48,GET,68daef34bdf51689765f0049,is there a webite that will get me around a firewa,MISS,0.011,0.1628
+2025-09-29T21:06:49,GET,68daef34bdf51689765eebbf,How can i put a password on my limewire program so,MISS,0.0116,0.0544
+2025-09-29T21:06:51,GET,68daef34bdf51689765ef964,Yankee fans Is it True?,MISS,0.014,0.0976
+2025-09-29T21:06:52,GET,68daef34bdf51689765ef46a,Why sue someone?  Don't you think you should trust,MISS,0.0114,0.0409
+2025-09-29T21:06:53,GET,68daef34bdf51689765eeb95,Harry Potter Fans?,MISS,0.0108,0.0547
+2025-09-29T21:06:54,GET,68daef34bdf51689765ef42e,I almost died yesterday?,MISS,0.0113,0.1783
+2025-09-29T21:06:55,GET,68daef34bdf51689765ef0a6,I would like to know more about the intended use o,MISS,0.0101,0.1195
+2025-09-29T21:06:57,GET,68daef34bdf51689765f038e,if you had a frend you liked what woud you give hi,MISS,0.0115,0.1377
+2025-09-29T21:06:58,GET,68daef34bdf51689765ef7c5,with what is davis cup associated with?,MISS,0.0114,0.0503
+2025-09-29T21:06:59,GET,68daef34bdf51689765eea4c,Is our judicial system a mess?,MISS,0.014,0.112
+2025-09-29T21:07:01,GET,68daef34bdf51689765ef8a5,do you need a servant/slave...???,MISS,0.0039,0.2781
+2025-09-29T21:07:01,GET,68daef34bdf51689765eea17,What was Sugar Ray Leonard's entrance music at his,MISS,0.0036,0.0192
+2025-09-29T21:07:03,GET,68daef34bdf51689765ee7bf,Have you heard of TAG yet Designer Label for the f,MISS,0.0037,0.0411
+2025-09-29T21:07:04,GET,68daef34bdf51689765eefb5,why cant i see the websites?,MISS,0.004,0.256
+2025-09-29T21:07:05,GET,68daef34bdf51689765ee243,"Hey Christians, how long before I die do I need to",MISS,0.0038,0.0
+2025-09-29T21:07:06,GET,68daef34bdf51689765ef9fb,John Kerry....REPORTING for DUTY...thanks Johnny..,MISS,0.0037,0.0526
+2025-09-29T21:07:06,GET,68daef34bdf51689765ee31c,Why are nocturnal bugs attracted to light?,MISS,0.0038,0.1882
+2025-09-29T21:07:07,GET,68daef34bdf51689765efd5c,"Holy Prepuce? Where is it? Did, Jesus get it back?",MISS,0.0038,0.0
+2025-09-29T21:07:08,GET,68daef34bdf51689765f05f0,can an indian and pakistani really be friends??,MISS,0.0037,0.1087
