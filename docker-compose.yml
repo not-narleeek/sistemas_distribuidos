@@ -30,15 +30,61 @@ services:
     container_name: cache
     ports:
       - "5000:5000"
-    command: ["--policy", "lru", "--size", "500", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--dummy_host", "dummy_LLM", "--dummy_port", "6000"]
+    command:
+      [
+        "--policy",
+        "lru",
+        "--size",
+        "500",
+        "--ttl",
+        "300",
+        "--mongo",
+        "mongodb://mongo:27017/",
+        "--db",
+        "yahoo_db",
+        "--coll",
+        "questions",
+        "--dummy_host",
+        "llm",
+        "--dummy_port",
+        "6000",
+        "--score_host",
+        "score",
+        "--score_port",
+        "7000",
+        "--storage_host",
+        "storage",
+        "--storage_port",
+        "7100",
+      ]
     depends_on:
       - mongo
       - llm
+      - score
+      - storage
 
   generador:
     build: ./generador
     container_name: generador_yahoo
-    command: ["--dist", "uniform", "--n", "8000", "--mongo", "mongodb://mongo:27017/", "--db", "yahoo_db", "--coll", "questions", "--cache_host", "cache", "--cache_port", "5000"]
+    command:
+      [
+        "--dist",
+        "uniform",
+        "--n",
+        "8000",
+        "--mongo",
+        "mongodb://mongo:27017/",
+        "--db",
+        "yahoo_db",
+        "--coll",
+        "questions",
+        "--cache_host",
+        "cache",
+        "--cache_port",
+        "5000",
+        "--dataset_csv",
+        "",
+      ]
     depends_on:
       - cache
 
@@ -47,6 +93,28 @@ services:
     container_name: dummy_LLM
     ports:
       - "6000:6000"
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-AIzaSyCwYSMz2UIO57xOnZZgW3vwetT3jjD581c}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+      GEMINI_TIMEOUT: ${GEMINI_TIMEOUT:-15}
+      GEMINI_RETRIES: ${GEMINI_RETRIES:-3}
+      GEMINI_BACKOFF: ${GEMINI_BACKOFF:-2.0}
+    depends_on:
+      - mongo
+
+  score:
+    build: ./score_service
+    container_name: score_service
+    ports:
+      - "7000:7000"
+    depends_on:
+      - mongo
+
+  storage:
+    build: ./storage_service
+    container_name: storage_service
+    ports:
+      - "7100:7100"
     depends_on:
       - mongo
 

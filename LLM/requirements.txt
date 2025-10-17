@@ -1,4 +1,1 @@
-pandas
-pymongo
-scikit-learn
-numpy
+google-generativeai==0.5.2
