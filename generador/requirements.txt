@@ -1,4 +1,3 @@
-pandas
 pymongo
-scikit-learn
-numpy
+pandas
+matplotlib
