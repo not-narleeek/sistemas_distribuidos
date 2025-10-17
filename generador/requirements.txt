@@ -1,4 +1,1 @@
-pandas
 pymongo
-scikit-learn
-numpy
