@@ -30,14 +30,18 @@ services:
     container_name: cache
     ports:
       - "5000:5000"
+    environment:
+      CACHE_POLICY: ${CACHE_POLICY:-lru}
+      CACHE_SIZE: ${CACHE_SIZE:-500}
+      CACHE_TTL: ${CACHE_TTL:-300}
     command:
       [
         "--policy",
-        "lru",
+        "${CACHE_POLICY:-lru}",
         "--size",
-        "500",
+        "${CACHE_SIZE:-500}",
         "--ttl",
-        "300",
+        "${CACHE_TTL:-300}",
         "--mongo",
         "mongodb://mongo:27017/",
         "--db",
@@ -66,6 +70,11 @@ services:
   generador:
     build: ./generador
     container_name: generador_yahoo
+    environment:
+      CACHE_POLICY: ${CACHE_POLICY:-lru}
+      CACHE_SIZE: ${CACHE_SIZE:-500}
+      CACHE_TTL: ${CACHE_TTL:-300}
+      GENERATOR_OUTPUT_DIR: ${GENERATOR_OUTPUT_DIR:-data_collected}
     command:
       [
         "--dist",
@@ -84,9 +93,13 @@ services:
         "5000",
         "--dataset_csv",
         "",
+        "--output_dir",
+        "${GENERATOR_OUTPUT_DIR:-data_collected}",
       ]
     depends_on:
       - cache
+    volumes:
+      - ./data_collected:/generador/data_collected
 
   llm:
     build: ./LLM

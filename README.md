@@ -138,8 +138,11 @@ Parámetros soportados:
 - `--dataset_csv`: Ruta opcional a `train.csv`/`test.csv` o al archivo de ejemplo `data/yahoo_sample.csv`.
 - `--mongo` / `--db` / `--coll`: Fuente alternativa en MongoDB.
 - `--cache_host` / `--cache_port`: Destino para enviar las consultas.
+- `--output_dir`: Directorio donde se guardarán los resultados y gráficas (por defecto `data_collected/`).
 
-El generador produce un `traffic_log.csv` con timestamp, operación, estado (HIT/MISS), latencia y `score` asociado.
+Cada corrida genera automáticamente un CSV nombrado con las características del experimento (distribución, parámetros de llegada y configuración de caché) dentro de `data_collected/`. Además se crean gráficas (`plots/`) con la evolución de la latencia, los puntajes obtenidos y la distribución HIT/MISS.
+
+Las variables de entorno `CACHE_POLICY`, `CACHE_SIZE`, `CACHE_TTL` y `GENERATOR_OUTPUT_DIR` (definidas en `docker-compose.yml`) permiten reutilizar los mismos valores tanto en la caché como en el generador y controlar la ubicación de los artefactos.
 
 ### Servicio LLM (Gemini)
 
@@ -160,12 +163,12 @@ El generador produce un `traffic_log.csv` con timestamp, operación, estado (HIT
 ## Instrumentación y análisis
 
 - El servicio de caché registra métricas de latencia e hit-rate accesibles vía `STATS` y enviadas al servicio de almacenamiento.
-- El generador guarda los logs de tráfico para análisis posteriores (`data_collected/`).
-- Los resultados normalizados quedan en MongoDB y pueden consultarse para generar tablas o gráficas (ver scripts en `data_collected/`).
+- El generador escribe los CSV y gráficos de cada ejecución en `data_collected/` (montado como volumen). Los nombres incluyen distribución, parámetros y política de caché para facilitar la trazabilidad.
+- Los resultados normalizados quedan en MongoDB y pueden consultarse para generar informes adicionales.
 
 ## Recursos adicionales
 
 - `data/yahoo_sample.csv`: Ejemplo mínimo compatible con `train.csv`/`test.csv`.
-- `data_collected/get_graph.py`: Script auxiliar para graficar métricas (se puede adaptar a nuevas corridas).
+- `data_collected/`: Carpeta vacía (con `.gitkeep`) preparada para recibir los CSV y gráficas generadas durante la ejecución.
 
 Con esta arquitectura modular es posible variar políticas de caché, tamaños, distribuciones de tráfico y umbrales de aceptación para realizar experimentos reproducibles sobre la calidad de respuesta del LLM.
