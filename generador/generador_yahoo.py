@@ -24,6 +24,9 @@ def poisson_interarrival(lmbda: float) -> float:
 def poisson_interarrival(lmbda: float) -> float:
     """Tiempo de espera entre llegadas para un proceso de Poisson."""
 
+def poisson_interarrival(lmbda: float) -> float:
+    """Tiempo de espera entre llegadas para un proceso de Poisson."""
+
     return random.expovariate(lmbda)
 
 
@@ -301,6 +304,13 @@ def run_generator(
                 "score": score,
             }
         )
+
+    print("[Generator] Finalizado.")
+    write_rows(log_file, run_rows)
+    if output_dir:
+        generate_graphs(log_file, output_dir, chart_rows)
+    else:
+        generate_graphs(log_file, log_file.parent, chart_rows)
 
     print("[Generator] Finalizado.")
     write_rows(log_file, run_rows)

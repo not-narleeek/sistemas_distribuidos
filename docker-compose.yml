@@ -34,6 +34,8 @@ services:
       CACHE_POLICY: ${CACHE_POLICY:-lru}
       CACHE_SIZE: ${CACHE_SIZE:-500}
       CACHE_TTL: ${CACHE_TTL:-300}
+      CACHE_LLM_TIMEOUT: ${CACHE_LLM_TIMEOUT:-20}
+      CACHE_LLM_RETRIES: ${CACHE_LLM_RETRIES:-2}
     command:
       [
         "--policy",
@@ -60,6 +62,10 @@ services:
         "storage",
         "--storage_port",
         "7100",
+        "--llm_timeout",
+        "${CACHE_LLM_TIMEOUT:-20}",
+        "--llm_retries",
+        "${CACHE_LLM_RETRIES:-2}",
       ]
     depends_on:
       - mongo
@@ -109,9 +115,11 @@ services:
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-AIzaSyCwYSMz2UIO57xOnZZgW3vwetT3jjD581c}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
-      GEMINI_TIMEOUT: ${GEMINI_TIMEOUT:-15}
-      GEMINI_RETRIES: ${GEMINI_RETRIES:-3}
+      GEMINI_TIMEOUT: ${GEMINI_TIMEOUT:-5}
+      GEMINI_RETRIES: ${GEMINI_RETRIES:-1}
       GEMINI_BACKOFF: ${GEMINI_BACKOFF:-2.0}
+      GEMINI_OFFLINE_MODE: ${GEMINI_OFFLINE_MODE:-true}
+      GEMINI_FALLBACK_ON_ERROR: ${GEMINI_FALLBACK_ON_ERROR:-true}
     depends_on:
       - mongo
 

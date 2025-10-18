@@ -149,7 +149,14 @@ class FIFOCache(CacheBase):
 
 
 class ServiceClient:
-    def __init__(self, host: str, port: int, timeout: float = 5.0, retries: int = 3, backoff: float = 0.5):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        timeout: float = 5.0,
+        retries: int = 3,
+        backoff: float = 0.5,
+    ):
         self.host = host
         self.port = port
         self.timeout = timeout
@@ -161,6 +168,7 @@ class ServiceClient:
         for attempt in range(self.retries):
             try:
                 with socket.create_connection((self.host, self.port), timeout=self.timeout) as sock:
+                    sock.settimeout(self.timeout)
                     sock.sendall(message.encode())
                     response = sock.recv(16384).decode().strip()
                     return json.loads(response) if response else {}
@@ -212,6 +220,18 @@ def main() -> None:
     parser.add_argument("--score_port", type=int, default=7000)
     parser.add_argument("--storage_host", default="storage")
     parser.add_argument("--storage_port", type=int, default=7100)
+    parser.add_argument(
+        "--llm_timeout",
+        type=float,
+        default=15.0,
+        help="Tiempo máximo de espera (s) para obtener respuesta del LLM",
+    )
+    parser.add_argument(
+        "--llm_retries",
+        type=int,
+        default=3,
+        help="Número de reintentos al contactar al LLM",
+    )
     args = parser.parse_args()
 
     cache = build_cache(args.policy, args.size, args.ttl)
@@ -241,7 +261,12 @@ def main() -> None:
         print(f"[Cache] Error conectando a MongoDB: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    llm_client = ServiceClient(args.dummy_host, args.dummy_port)
+    llm_client = ServiceClient(
+        args.dummy_host,
+        args.dummy_port,
+        timeout=args.llm_timeout,
+        retries=args.llm_retries,
+    )
     score_client = ServiceClient(args.score_host, args.score_port)
     storage_client = ServiceClient(args.storage_host, args.storage_port)
 

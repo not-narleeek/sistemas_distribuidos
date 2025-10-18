@@ -98,6 +98,11 @@ Parámetros relevantes (ver `docker-compose.yml`):
 - `--dummy_host/--dummy_port`: Host y puerto del servicio LLM.
 - `--score_host/--score_port`: Host y puerto del servicio de scoring.
 - `--storage_host/--storage_port`: Host y puerto del servicio de almacenamiento.
+- `--llm_timeout` / `--llm_retries`: Controlan cuánto esperar por una respuesta del LLM y cuántos reintentos realizar.
+
+Variables de entorno relacionadas:
+
+- `CACHE_LLM_TIMEOUT` y `CACHE_LLM_RETRIES` (definidas en `docker-compose.yml`) permiten ajustar esos valores sin editar la imagen.
 
 Puedes consultar métricas agregadas con:
 
@@ -152,7 +157,14 @@ Las variables de entorno `CACHE_POLICY`, `CACHE_SIZE`, `CACHE_TTL` y `GENERATOR_
   - `--max_concurrent`: concurrencia máxima manejada de forma segura.
   - `--gemini_model`: modelo de Gemini a utilizar (por defecto `gemini-1.5-flash`).
   - `--gemini_timeout`, `--gemini_retries`, `--gemini_backoff`: controlan reintentos y _timeouts_ frente a errores transitorios.
+- `--offline-mode` / `--online-mode`: fuerzan el uso del modo offline o del acceso real a Gemini.
+- `--enable-fallback` / `--disable-fallback`: activan o desactivan la generación local cuando la API de Gemini no responde.
+- Variables de entorno:
+  - `GEMINI_OFFLINE_MODE` (por defecto `true` en Docker) para evitar llamadas externas en entornos sin internet.
+  - `GEMINI_FALLBACK_ON_ERROR` para mantener el fallback local.
+  - `GEMINI_TIMEOUT`, `GEMINI_RETRIES` y `GEMINI_BACKOFF` permiten afinar el comportamiento sin modificar la línea de comandos.
 - El servicio construye un prompt contextualizado con el título y el contenido de la pregunta y delega la generación a la API oficial de Gemini, retornando la respuesta directamente al servicio de caché.
+  - En modo offline o cuando la API no responde, se genera una respuesta local que documenta la situación para mantener fluido el pipeline.
 
 ## Gestión
 

@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import socket
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -38,23 +39,31 @@ class GeminiClientError(RuntimeError):
 
 @dataclass(slots=True)
 class GeminiConfig:
-    api_key: str
+    api_key: Optional[str]
     model: str = "gemini-1.5-flash"
-    timeout: float = 15.0
-    max_retries: int = 3
+    timeout: float = 5.0
+    max_retries: int = 1
     backoff: float = 2.0
+    offline_mode: bool = False
+    fallback_on_error: bool = True
 
 
 class GeminiClient:
     """Cliente liviano y seguro para múltiples hilos sobre la API de Gemini."""
 
     def __init__(self, config: GeminiConfig):
-        if not config.api_key:
-            raise ValueError("Se requiere la API key de Gemini (GEMINI_API_KEY)")
-
         self._config = config
-        genai.configure(api_key=config.api_key)
-        self._model = genai.GenerativeModel(config.model)
+        self._offline_mode = config.offline_mode
+        self._fallback_on_error = config.fallback_on_error
+        self._model: Optional[genai.GenerativeModel] = None
+
+        if not self._offline_mode:
+            if not config.api_key:
+                raise ValueError("Se requiere la API key de Gemini (GEMINI_API_KEY)")
+            genai.configure(api_key=config.api_key)
+            self._model = genai.GenerativeModel(config.model)
+        else:
+            print("[GeminiLLM] Ejecutando en modo offline; se generarán respuestas locales.", file=sys.stderr)
         self._lock = threading.Lock()
 
     def build_prompt(self, title: str, content: str) -> str:
@@ -71,9 +80,13 @@ class GeminiClient:
         prompt = self.build_prompt(title, content)
         last_exc: Optional[Exception] = None
 
+        if self._offline_mode:
+            return self._build_fallback_answer(title, content, None)
+
         for attempt in range(1, self._config.max_retries + 1):
             try:
                 with self._lock:
+                    assert self._model is not None
                     response = self._model.generate_content(
                         prompt,
                         request_options={"timeout": self._config.timeout},
@@ -83,11 +96,41 @@ class GeminiClient:
                 return response.text.strip()
             except Exception as exc:  # pragma: no cover - robustez ante errores externos
                 last_exc = exc
+                if self._config.fallback_on_error:
+                    print(
+                        f"[GeminiLLM] Error contactando a Gemini en intento {attempt}: {exc}. Activando fallback local.",
+                        file=sys.stderr,
+                    )
+                    break
                 if attempt >= self._config.max_retries:
                     break
                 time.sleep(self._config.backoff * attempt)
 
+        if self._config.fallback_on_error:
+            return self._build_fallback_answer(title, content, last_exc)
+
         raise GeminiClientError(str(last_exc) if last_exc else "Fallo desconocido de Gemini")
+
+    def _build_fallback_answer(
+        self, title: str, content: str, error: Optional[Exception]
+    ) -> str:
+        question_title = title.strip() or "Consulta de Yahoo! Answers"
+        details = content.strip() or "No se proporcionaron detalles adicionales."
+        note = "Esta respuesta fue generada localmente porque el servicio de Gemini no respondió a tiempo."
+        if error:
+            note += f" Motivo original: {error}."
+        guidance = (
+            "Para obtener una respuesta definitiva, compara esta recomendación con la mejor respuesta humana del "
+            "dataset y consulta fuentes confiables adicionales."
+        )
+        return (
+            f"{question_title}\n\n"
+            f"Descripción: {details}\n\n"
+            "Sugerencia generada localmente:\n"
+            "- Revisa la respuesta aceptada en el dataset.\n"
+            "- Considera desglosar el problema en pasos para verificar cada afirmación.\n\n"
+            f"{note} {guidance}"
+        )
 
 
 def run_dummy_server(
@@ -147,6 +190,13 @@ def run_dummy_server(
         threading.Thread(target=handle_client, args=(connection,), daemon=True).start()
 
 
+def env_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Servicio LLM basado en Gemini")
     parser.add_argument("--host", default="0.0.0.0")
@@ -191,14 +241,52 @@ if __name__ == "__main__":
         default=os.getenv("GEMINI_API_KEY"),
         help="API key de Gemini (también puede venir de la variable de entorno)",
     )
+    parser.add_argument(
+        "--offline-mode",
+        dest="offline_mode",
+        action="store_true",
+        help="Evita llamadas externas y responde con el fallback local",
+    )
+    parser.add_argument(
+        "--online-mode",
+        dest="offline_mode",
+        action="store_false",
+        help="Forza el uso de Gemini (si hay API key disponible)",
+    )
+    parser.add_argument(
+        "--disable-fallback",
+        dest="fallback_on_error",
+        action="store_false",
+        help="Desactiva el fallback local ante errores de Gemini",
+    )
+    parser.add_argument(
+        "--enable-fallback",
+        dest="fallback_on_error",
+        action="store_true",
+        help="Activa el fallback local ante errores de Gemini",
+    )
+
+    parser.set_defaults(
+        offline_mode=env_bool("GEMINI_OFFLINE_MODE", False),
+        fallback_on_error=env_bool("GEMINI_FALLBACK_ON_ERROR", True),
+    )
 
     opts = parser.parse_args()
+    offline_mode = opts.offline_mode or not opts.gemini_api_key
+    if offline_mode and not opts.offline_mode and opts.gemini_api_key:
+        print(
+            "[GeminiLLM] API key provista pero no disponible; se habilita modo offline por omisión.",
+            file=sys.stderr,
+        )
+
     config = GeminiConfig(
         api_key=opts.gemini_api_key,
         model=opts.gemini_model,
         timeout=opts.gemini_timeout,
         max_retries=opts.gemini_retries,
         backoff=opts.gemini_backoff,
+        offline_mode=offline_mode,
+        fallback_on_error=opts.fallback_on_error,
     )
     run_dummy_server(
         opts.host,
