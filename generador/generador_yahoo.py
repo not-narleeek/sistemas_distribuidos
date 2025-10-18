@@ -18,6 +18,11 @@ from pymongo import MongoClient
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+def poisson_interarrival(lmbda: float) -> float:
+    """Tiempo de espera entre llegadas para un proceso de Poisson."""
+
+def poisson_interarrival(lmbda: float) -> float:
+    """Tiempo de espera entre llegadas para un proceso de Poisson."""
 
 def poisson_interarrival(lmbda: float) -> float:
     """Tiempo de espera entre llegadas para un proceso de Poisson."""
@@ -307,6 +312,12 @@ def run_generator(
     else:
         generate_graphs(log_file, log_file.parent, chart_rows)
 
+    print("[Generator] Finalizado.")
+    write_rows(log_file, run_rows)
+    if output_dir:
+        generate_graphs(log_file, output_dir, chart_rows)
+    else:
+        generate_graphs(log_file, log_file.parent, chart_rows)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
