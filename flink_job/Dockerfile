@@ -12,10 +12,10 @@ RUN pip3 install --no-cache-dir -r /opt/flink/requirements.txt
 RUN wget -qO /opt/flink/lib/flink-sql-connector-kafka.jar \
     https://repo1.maven.org/maven2/org/apache/flink/flink-sql-connector-kafka/1.17.1/flink-sql-connector-kafka-1.17.1.jar
 
-COPY common /opt/flink/common
+COPY common /opt/flink/python/common
 COPY flink_job/streaming_score_job.py /opt/flink/usrlib/streaming_score_job.py
 
-ENV PYTHONPATH=/opt/flink/usrlib:/opt/flink/common
+ENV PYTHONPATH=/opt/flink/usrlib:/opt/flink/python
 
 USER flink
 
