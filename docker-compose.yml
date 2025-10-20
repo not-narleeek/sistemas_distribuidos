@@ -44,9 +44,7 @@ services:
       - "27017:27017"
 
   init-mongo:
-    build:
-      context: .
-      dockerfile: mongo-init/Dockerfile
+    image: mongo:6.0
     depends_on:
       - mongo
     environment:
@@ -54,6 +52,10 @@ services:
       MONGO_INITDB_PORT: 27017
       MONGO_INITDB_DATABASE: yahoo_db
       MONGO_INITDB_COLLECTION: questions
+    volumes:
+      - ./mongo-init/bdd.json:/bdd.json:ro
+      - ./mongo-init/init.sh:/init.sh:ro
+    entrypoint: ["/bin/bash", "/init.sh"]
 
   cache-service:
     build:
