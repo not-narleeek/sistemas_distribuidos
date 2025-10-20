@@ -1,186 +1,109 @@
-# Sistema distribuido para evaluación de respuestas LLM
+# Plataforma asíncrona para evaluación de respuestas LLM
 
-Sistema distribuido modular que simula tráfico de usuarios, consulta un modelo LLM, evalúa la calidad de sus respuestas frente a Yahoo! Answers y persiste métricas reproducibles.
+La segunda iteración del sistema introduce una arquitectura completamente desacoplada, impulsada por Apache Kafka y Apache Flink, para evaluar respuestas generadas por modelos de lenguaje usando el dataset de Yahoo! Answers.
 
-## Requisitos previos
+## Componentes principales
 
-- Docker Engine 20.10 o superior.
-- Docker Compose 1.29 o superior.
-- Al menos 2 GB de RAM disponibles.
-- Puertos libres: `27017`, `5000`, `6000`, `7000`, `7100`.
+| Componente | Rol | Tecnología |
+|------------|-----|------------|
+| `traffic-generator` | Publica preguntas en Kafka siguiendo distribuciones configurables. | Python, kafka-python |
+| `cache-service` | Revisa MongoDB y la caché local; encola solicitudes al LLM o propaga respuestas válidas. | Python, kafka-python |
+| `llm-consumer` | Atiende `llm_requests`, genera respuestas (modo offline por defecto) y maneja errores con *exponential backoff*. | Python |
+| `flink-jobmanager` / `flink-taskmanager` | Ejecutan el *job* de Flink que puntúa respuestas, envía regeneraciones y registra métricas. | Apache Flink, PyFlink |
+| `storage-service` | Persiste las respuestas validadas y métricas agregadas en MongoDB. | Python, PyMongo |
+| `mongo` | Base de datos de preguntas originales y resultados. | MongoDB |
+| `kafka` + `zookeeper` | Bus de mensajería distribuido y coordinador. | Confluent Kafka |
 
-## Arquitectura del sistema
+Los módulos existentes (generador, caché, almacenamiento) ahora operan como productores/consumidores de Kafka y conviven con nuevos tópicos que orquestan el flujo asíncrono:
 
-El ecosistema se compone de siete servicios cooperando en red:
+- `questions_in`
+- `llm_requests`
+- `llm_responses`
+- `llm_errors`
+- `regeneration_requests`
+- `validated_responses`
 
-- **mongo**: Base de datos que almacena las preguntas de Yahoo! Answers.
-- **init-mongo**: Inicializa MongoDB importando los datos sólo si la colección no existe.
-- **llm**: Cliente Gemini que consulta el modelo `gemini-1.5-flash` con _rate limiting_ y reintentos.
-- **score**: Servicio encargado de calcular la similitud (coseno TF-IDF) entre la respuesta humana y la respuesta LLM.
-- **storage**: Microservicio responsable de persistir las respuestas, contadores de acceso y métricas agregadas.
-- **cache**: Servicio de caché con políticas `LRU`, `LFU` o `FIFO`, TTL configurable y registro de latencias/hit-rate.
-- **generador**: Generador de tráfico configurable que extrae preguntas desde un CSV (`train/test`) o desde MongoDB.
+El *job* de Flink calcula la métrica TF-IDF (Tarea 1), decide si aceptar la respuesta o solicitar una regeneración y mantiene estado para evitar bucles infinitos.
 
-## Estructura del repositorio
+## Requisitos
 
-```
-├── build.sh                  # Script para construir todas las imágenes
-├── run.sh                    # Script para iniciar la plataforma
-├── docker-compose.yml        # Orquestación de servicios
-├── cache/
-│   ├── cache.py
-│   ├── Dockerfile
-│   └── requirements.txt
-├── generador/
-│   ├── generador_yahoo.py
-│   ├── Dockerfile
-│   └── requirements.txt
-├── LLM/
-│   ├── dummy_LLM.py
-│   ├── Dockerfile
-│   └── requirements.txt
-├── score_service/
-│   ├── score_service.py
-│   ├── Dockerfile
-│   └── requirements.txt
-├── storage_service/
-│   ├── storage_service.py
-│   ├── Dockerfile
-│   └── requirements.txt
-├── mongo-init/
-│   ├── bdd.json
-│   ├── Dockerfile
-│   └── init.sh
-└── data/
-    └── yahoo_sample.csv      # Ejemplo de dataset compatible con train/test
-```
+- Docker Engine ≥ 20.10 con soporte para `docker compose` v2.
+- 4 GB de RAM libres (Flink y Kafka requieren memoria adicional).
+- Puertos disponibles: `2181`, `8081`, `9092`, `27017`.
 
-## Despliegue
-
-### 1. Clonar el repositorio
+## Puesta en marcha
 
 ```bash
-git clone <url-del-repo>
-cd sistemas_distribuidos
+# Construye todas las imágenes personalizadas
+docker compose build
+
+# Levanta toda la plataforma
+docker compose up -d
+
+# Lanza el job de Flink (se crea automáticamente vía servicio `flink-submit`)
+docker compose logs -f flink-submit
 ```
 
-### 2. Construir las imágenes
+Los servicios quedan disponibles en la red interna `docker_default`. Puedes inspeccionar su estado con `docker compose ps` y los logs con `docker compose logs -f <servicio>`.
 
-```bash
-./build.sh
+## Configuración rápida
+
+Variables de entorno clave (ver `docker-compose.yml`):
+
+- `CACHE_POLICY`, `CACHE_SIZE`, `CACHE_TTL`: política y parámetros de la caché (default `lru` / `1024` / `3600`).
+- `SCORE_THRESHOLD`: umbral mínimo del score (default `0.65`).
+- `MAX_RETRIES`: intentos máximos permitidos antes de aceptar una respuesta (default `3`).
+- `KAFKA_BOOTSTRAP_SERVERS`: dirección del *broker* para todos los servicios Python.
+
+Puedes personalizar la carga de trabajo del generador ajustando `--total`, `--distribution`, `--lambda`, `--low` y `--high` en la sección correspondiente del compose.
+
+## Flujo de mensajes
+
+![Arquitectura](docs/architecture.puml)
+
+1. `traffic-generator` publica `QuestionMessage` con los metadatos de la pregunta.
+2. `cache-service` verifica si existe una respuesta almacenada. Si la hay, produce `ValidatedResponse`; si no, genera un `LLMRequest`.
+3. `llm-consumer` responde a cada solicitud y entrega `LLMResponse` (o `ErrorMessage` ante fallos).
+4. El *job* de Flink puntúa las respuestas y decide aceptar o solicitar regeneración (`regeneration_requests`).
+5. `cache-service` consume regeneraciones y vuelve a invocar al LLM manteniendo el mismo `trace_id`.
+6. `storage-service` consume `validated_responses` y actualiza MongoDB junto a métricas agregadas.
+
+## Métricas y observabilidad
+
+- Flink expone contadores `responses_accepted` y `responses_regenerated`, visibles desde la UI web (`http://localhost:8081`).
+- `storage-service` mantiene un documento `metrics` con el acumulado de respuestas aceptadas/rechazadas y score medio.
+- El generador registra CSV y gráficos en `data_collected/` con la evolución del tráfico emitido.
+- Todos los servicios emiten logs en formato JSON (`trace_id`, `message_id`) para facilitar la trazabilidad.
+
+## Experimentos sugeridos
+
+1. **Latencia end-to-end**: medir tiempo entre publicación en `questions_in` y persistencia en MongoDB.
+2. **Impacto del umbral**: variar `SCORE_THRESHOLD` y cuantificar tasa de regeneraciones vs. calidad.
+3. **Carga paralela**: aumentar particiones en Kafka y `FLINK_PARALLELISM` para estudiar throughput.
+4. **Estrategias de caché**: alternar `lru`, `lfu` y `fifo` y comparar hit-rate y latencia.
+
+Los resultados pueden exportarse directamente desde MongoDB o reutilizando los CSV del generador para construir gráficos comparativos.
+
+## Requerimientos de Python
+
+Para ejecutar los servicios sin contenedores utiliza `requirements.txt` en la raíz. Cada microservicio cuenta además con su propio archivo `requirements.txt` optimizado para su imagen Docker.
+
+## Estructura relevante del repositorio
+
+```
+common/                       # Modelos de mensaje y utilidades Kafka
+cache/cache.py                # Servicio de caché como consumidor/productor Kafka
+generador/generador_yahoo.py  # Generador de tráfico hacia Kafka
+LLM/kafka_llm_consumer.py     # Servicio LLM asíncrono con backoff
+flink_job/streaming_score_job.py # Job PyFlink para scoring y regeneración
+storage_service/storage_service.py # Persistencia de respuestas validadas
+docs/architecture.puml        # Diagrama PlantUML
 ```
 
-### 3. Iniciar los servicios
+## Notas adicionales
 
-```bash
-./run.sh
-```
+- El `docker-compose.yml` evita la creación automática de tópicos; el generador inicializa `questions_in`. Los demás servicios crean los necesarios bajo demanda.
+- En entornos sin conexión a internet el `llm-consumer` funciona en modo offline y devuelve respuestas determinísticas.
+- Se recomienda monitorear el consumo de recursos de Kafka y Flink al aumentar el volumen de mensajes.
 
-Los servicios se inicializan en el siguiente orden: MongoDB → storage/score → LLM → importador → caché → generador. Puedes comprobar el estado con `docker-compose ps`.
-
-> **Nota:** Si dispones de una API key propia puedes exportarla antes de iniciar los contenedores con `export GEMINI_API_KEY="tu_api_key"`. El `docker-compose.yml` incluye un valor por defecto provisto para las pruebas.
-
-### 4. Verificación rápida
-
-- **Inicialización de MongoDB**: `docker-compose logs init-mongo`
-- **Conteo de documentos**: `docker exec -it mongo_yahoo mongosh yahoo_db --eval "db.questions.countDocuments()"`
-- **Logs de servicios**: `docker-compose logs -f <servicio>`
-
-## Configuración
-
-### Servicio de caché
-
-Parámetros relevantes (ver `docker-compose.yml`):
-
-- `--policy`: Política de reemplazo (`lru`, `lfu`, `fifo`).
-- `--size`: Capacidad máxima (entradas).
-- `--ttl`: Tiempo de vida en segundos por entrada.
-- `--dummy_host/--dummy_port`: Host y puerto del servicio LLM.
-- `--score_host/--score_port`: Host y puerto del servicio de scoring.
-- `--storage_host/--storage_port`: Host y puerto del servicio de almacenamiento.
-- `--llm_timeout` / `--llm_retries`: Controlan cuánto esperar por una respuesta del LLM y cuántos reintentos realizar.
-
-Variables de entorno relacionadas:
-
-- `CACHE_LLM_TIMEOUT` y `CACHE_LLM_RETRIES` (definidas en `docker-compose.yml`) permiten ajustar esos valores sin editar la imagen.
-
-Puedes consultar métricas agregadas con:
-
-```bash
-docker exec -it cache nc localhost 5000 <<<'STATS'
-```
-
-### Servicio de scoring
-
-Expone un servidor TCP (puerto `7000`) que recibe payloads JSON con `question_id`, `best_answer` y `llm_answer`. Devuelve el puntaje normalizado (0–1) y una bandera `accepted` usando un umbral configurable (`--threshold`).
-
-### Servicio de almacenamiento
-
-Guarda documentos con el siguiente esquema base:
-
-```json
-{
-  "id_pregunta": "...",
-  "pregunta": "...",
-  "respuesta_dataset": "...",
-  "respuesta_llm": "...",
-  "score": 0.82,
-  "aceptado": true,
-  "contador_consultas": 5,
-  "ultima_actualizacion": "2024-05-01T00:00:00Z"
-}
-```
-
-Además mantiene un documento `metrics` con hit/miss acumulado, latencia y puntaje promedio para análisis experimental.
-
-### Generador de tráfico
-
-Parámetros soportados:
-
-- `--dist`: `poisson` o `uniform`.
-- `--lmbda`, `--low`, `--high`: Parámetros de llegada.
-- `--n`: Cantidad de consultas por ciclo.
-- `--dataset_csv`: Ruta opcional a `train.csv`/`test.csv` o al archivo de ejemplo `data/yahoo_sample.csv`.
-- `--mongo` / `--db` / `--coll`: Fuente alternativa en MongoDB.
-- `--cache_host` / `--cache_port`: Destino para enviar las consultas.
-- `--output_dir`: Directorio donde se guardarán los resultados y gráficas (por defecto `data_collected/`).
-
-Cada corrida genera automáticamente un CSV nombrado con las características del experimento (distribución, parámetros de llegada y configuración de caché) dentro de `data_collected/`. Además se crean gráficas (`plots/`) con la evolución de la latencia, los puntajes obtenidos y la distribución HIT/MISS.
-
-Las variables de entorno `CACHE_POLICY`, `CACHE_SIZE`, `CACHE_TTL` y `GENERATOR_OUTPUT_DIR` (definidas en `docker-compose.yml`) permiten reutilizar los mismos valores tanto en la caché como en el generador y controlar la ubicación de los artefactos.
-
-### Servicio LLM (Gemini)
-
-- Requiere definir la variable `GEMINI_API_KEY` (o usar el valor por defecto configurado en `docker-compose.yml`).
-- Parámetros clave:
-  - `--max_rps`: solicitudes por segundo permitidas.
-  - `--max_concurrent`: concurrencia máxima manejada de forma segura.
-  - `--gemini_model`: modelo de Gemini a utilizar (por defecto `gemini-1.5-flash`).
-  - `--gemini_timeout`, `--gemini_retries`, `--gemini_backoff`: controlan reintentos y _timeouts_ frente a errores transitorios.
-- `--offline-mode` / `--online-mode`: fuerzan el uso del modo offline o del acceso real a Gemini.
-- `--enable-fallback` / `--disable-fallback`: activan o desactivan la generación local cuando la API de Gemini no responde.
-- Variables de entorno:
-  - `GEMINI_OFFLINE_MODE` (por defecto `true` en Docker) para evitar llamadas externas en entornos sin internet.
-  - `GEMINI_FALLBACK_ON_ERROR` para mantener el fallback local.
-  - `GEMINI_TIMEOUT`, `GEMINI_RETRIES` y `GEMINI_BACKOFF` permiten afinar el comportamiento sin modificar la línea de comandos.
-- El servicio construye un prompt contextualizado con el título y el contenido de la pregunta y delega la generación a la API oficial de Gemini, retornando la respuesta directamente al servicio de caché.
-  - En modo offline o cuando la API no responde, se genera una respuesta local que documenta la situación para mantener fluido el pipeline.
-
-## Gestión
-
-- **Detener servicios**: `docker-compose down`
-- **Detener y eliminar datos**: `docker-compose down -v`
-- **Revisar logs**: `docker-compose logs -f`
-
-## Instrumentación y análisis
-
-- El servicio de caché registra métricas de latencia e hit-rate accesibles vía `STATS` y enviadas al servicio de almacenamiento.
-- El generador escribe los CSV y gráficos de cada ejecución en `data_collected/` (montado como volumen). Los nombres incluyen distribución, parámetros y política de caché para facilitar la trazabilidad.
-- Los resultados normalizados quedan en MongoDB y pueden consultarse para generar informes adicionales.
-
-## Recursos adicionales
-
-- `data/yahoo_sample.csv`: Ejemplo mínimo compatible con `train.csv`/`test.csv`.
-- `data_collected/`: Carpeta vacía (con `.gitkeep`) preparada para recibir los CSV y gráficas generadas durante la ejecución.
-
-Con esta arquitectura modular es posible variar políticas de caché, tamaños, distribuciones de tráfico y umbrales de aceptación para realizar experimentos reproducibles sobre la calidad de respuesta del LLM.
+Con esta infraestructura modular es posible analizar empíricamente el impacto de un modelo asíncrono en la latencia, throughput y calidad de las respuestas, cumpliendo los objetivos de la Tarea 2.
