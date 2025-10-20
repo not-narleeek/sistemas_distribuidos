@@ -1,0 +1,38 @@
+@startuml
+skinparam backgroundColor #ffffff
+skinparam shadowing false
+skinparam arrowColor #2d3436
+skinparam ArrowThickness 2
+skinparam wrapWidth 200
+
+rectangle "Traffic Generator" as TG
+rectangle "Kafka\nquestions_in" as QIN
+rectangle "Cache Service" as CACHE
+rectangle "Kafka\nllm_requests" as LLM_REQ
+rectangle "LLM Consumer" as LLM
+rectangle "Kafka\nllm_responses" as LLM_RES
+rectangle "Flink Job" as FLINK
+rectangle "Kafka\nvalidated_responses" as VALIDATED
+rectangle "Kafka\nregeneration_requests" as REGEN
+rectangle "Kafka\nllm_errors" as ERRORS
+rectangle "Storage Service" as STORAGE
+rectangle "MongoDB" as MONGO
+
+TG --> QIN : publish QuestionMessage
+QIN --> CACHE : consume questions
+CACHE --> VALIDATED : cache hit
+CACHE --> LLM_REQ : cache miss
+LLM_REQ --> LLM : consume LLMRequest
+LLM --> LLM_RES : publish LLMResponse
+LLM --> ERRORS : publish ErrorMessage
+LLM_RES --> FLINK : streaming score
+FLINK --> VALIDATED : accepted
+FLINK --> REGEN : retry request
+REGEN --> CACHE : subscribe for regeneration
+VALIDATED --> STORAGE : consume ValidatedResponse
+STORAGE --> MONGO : upsert results
+
+CACHE --> MONGO : fetch cached documents
+STORAGE --> MONGO : write metrics
+
+@enduml
