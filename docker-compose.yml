@@ -45,8 +45,8 @@ services:
 
   init-mongo:
     build:
-      context: ./mongo-init
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: mongo-init/Dockerfile
     depends_on:
       - mongo
     environment:
