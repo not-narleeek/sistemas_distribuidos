@@ -1,10 +1,13 @@
 FROM python:3.10-slim
 
-WORKDIR /cache
+WORKDIR /app
 
-COPY requirements.txt .
+COPY cache/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY cache.py .
+COPY common /app/common
+COPY cache/cache.py /app/cache.py
+
+ENV PYTHONPATH=/app:/app/common
 
 ENTRYPOINT ["python", "cache.py"]

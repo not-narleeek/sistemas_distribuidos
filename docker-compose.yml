@@ -1,147 +1,203 @@
-version: '3.8'
-
 services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    ports:
+      - "9092:9092"
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - kafka
+    entrypoint: ["/bin/bash", "-c"]
+    command: >
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic questions_in --partitions 3 --replication-factor 1 &&
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic llm_requests --partitions 3 --replication-factor 1 &&
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic llm_responses --partitions 3 --replication-factor 1 &&
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic llm_errors --partitions 1 --replication-factor 1 &&
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic regeneration_requests --partitions 3 --replication-factor 1 &&
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic validated_responses --partitions 3 --replication-factor 1
+
   mongo:
     image: mongo:6.0
-    container_name: mongo_yahoo
-    ports:
-      - "27017:27017"
     volumes:
       - mongo_data:/data/db
-    restart: on-failure
+    ports:
+      - "27017:27017"
 
   init-mongo:
-    build:
-      context: ./mongo-init
-      dockerfile: Dockerfile
+    image: mongo:6.0
     depends_on:
       - mongo
-    networks:
-      - default
     environment:
       MONGO_INITDB_HOST: mongo
       MONGO_INITDB_PORT: 27017
       MONGO_INITDB_DATABASE: yahoo_db
       MONGO_INITDB_COLLECTION: questions
-    restart: "no"
-
-  cache:
-    build: ./cache
-    container_name: cache
-    ports:
-      - "5000:5000"
-    environment:
-      CACHE_POLICY: ${CACHE_POLICY:-lru}
-      CACHE_SIZE: ${CACHE_SIZE:-500}
-      CACHE_TTL: ${CACHE_TTL:-300}
-      CACHE_LLM_TIMEOUT: ${CACHE_LLM_TIMEOUT:-20}
-      CACHE_LLM_RETRIES: ${CACHE_LLM_RETRIES:-2}
-    command:
-      [
-        "--policy",
-        "${CACHE_POLICY:-lru}",
-        "--size",
-        "${CACHE_SIZE:-500}",
-        "--ttl",
-        "${CACHE_TTL:-300}",
-        "--mongo",
-        "mongodb://mongo:27017/",
-        "--db",
-        "yahoo_db",
-        "--coll",
-        "questions",
-        "--dummy_host",
-        "llm",
-        "--dummy_port",
-        "6000",
-        "--score_host",
-        "score",
-        "--score_port",
-        "7000",
-        "--storage_host",
-        "storage",
-        "--storage_port",
-        "7100",
-        "--llm_timeout",
-        "${CACHE_LLM_TIMEOUT:-20}",
-        "--llm_retries",
-        "${CACHE_LLM_RETRIES:-2}",
-      ]
-    depends_on:
-      - mongo
-      - llm
-      - score
-      - storage
-
-  generador:
-    build: ./generador
-    container_name: generador_yahoo
-    environment:
-      CACHE_POLICY: ${CACHE_POLICY:-lru}
-      CACHE_SIZE: ${CACHE_SIZE:-500}
-      CACHE_TTL: ${CACHE_TTL:-300}
-      GENERATOR_OUTPUT_DIR: ${GENERATOR_OUTPUT_DIR:-data_collected}
-    command:
-      [
-        "--dist",
-        "uniform",
-        "--n",
-        "8000",
-        "--mongo",
-        "mongodb://mongo:27017/",
-        "--db",
-        "yahoo_db",
-        "--coll",
-        "questions",
-        "--cache_host",
-        "cache",
-        "--cache_port",
-        "5000",
-        "--dataset_csv",
-        "",
-        "--output_dir",
-        "${GENERATOR_OUTPUT_DIR:-data_collected}",
-      ]
-    depends_on:
-      - cache
     volumes:
-      - ./data_collected:/generador/data_collected
+      - ./mongo-init/bdd.json:/bdd.json:ro
+      - ./mongo-init/init.sh:/init.sh:ro
+    entrypoint: ["/bin/bash", "/init.sh"]
 
-  llm:
-    build: ./LLM
-    container_name: dummy_LLM
-    ports:
-      - "6000:6000"
+  cache-service:
+    build:
+      context: .
+      dockerfile: cache/Dockerfile
     environment:
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-AIzaSyCwYSMz2UIO57xOnZZgW3vwetT3jjD581c}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
-      GEMINI_TIMEOUT: ${GEMINI_TIMEOUT:-5}
-      GEMINI_RETRIES: ${GEMINI_RETRIES:-1}
-      GEMINI_BACKOFF: ${GEMINI_BACKOFF:-2.0}
-      GEMINI_OFFLINE_MODE: ${GEMINI_OFFLINE_MODE:-true}
-      GEMINI_FALLBACK_ON_ERROR: ${GEMINI_FALLBACK_ON_ERROR:-true}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SERVICE_NAME: cache-service
+      CACHE_POLICY: ${CACHE_POLICY:-lru}
+      CACHE_SIZE: ${CACHE_SIZE:-1024}
+      CACHE_TTL: ${CACHE_TTL:-3600}
+    command:
+      [
+        "--policy", "${CACHE_POLICY:-lru}",
+        "--size", "${CACHE_SIZE:-1024}",
+        "--ttl", "${CACHE_TTL:-3600}",
+        "--mongo-uri", "mongodb://mongo:27017/",
+        "--mongo-db", "yahoo_db",
+        "--mongo-coll", "results",
+        "--input-topic", "questions_in",
+        "--llm-topic", "llm_requests",
+        "--validated-topic", "validated_responses",
+        "--regeneration-topic", "regeneration_requests",
+        "--group-id", "cache-service",
+      ]
     depends_on:
+      - kafka-init
       - mongo
 
-  score:
-    build: ./score_service
-    container_name: score_service
-    ports:
-      - "7000:7000"
+  traffic-generator:
+    build:
+      context: .
+      dockerfile: generador/Dockerfile
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SERVICE_NAME: traffic-generator
+    command:
+      [
+        "--total", "100",
+        "--distribution", "poisson",
+        "--lambda", "1.5",
+        "--mongo-uri", "mongodb://mongo:27017/",
+        "--mongo-db", "yahoo_db",
+        "--mongo-coll", "questions",
+        "--output", "/data/traffic",
+        "--topic", "questions_in",
+        "--partitions", "3",
+        "--replication-factor", "1"
+      ]
+    volumes:
+      - ./data_collected:/data
     depends_on:
+      - kafka-init
       - mongo
 
-  storage:
-    build: ./storage_service
-    container_name: storage_service
-    ports:
-      - "7100:7100"
+  llm-consumer:
+    build:
+      context: .
+      dockerfile: LLM/Dockerfile
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SERVICE_NAME: llm-consumer
+    command:
+      [
+        "--request-topic", "llm_requests",
+        "--response-topic", "llm_responses",
+        "--error-topic", "llm_errors",
+        "--group-id", "llm-consumer"
+      ]
     depends_on:
+      - kafka-init
+
+  storage-service:
+    build:
+      context: .
+      dockerfile: storage_service/Dockerfile
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SERVICE_NAME: storage-service
+    command:
+      [
+        "--mongo-uri", "mongodb://mongo:27017/",
+        "--db", "yahoo_db",
+        "--collection", "results",
+        "--metrics", "metrics",
+        "--topic", "validated_responses",
+        "--group-id", "storage-service"
+      ]
+    depends_on:
+      - kafka-init
       - mongo
+
+  flink-jobmanager:
+    build:
+      context: .
+      dockerfile: flink_job/Dockerfile
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      FLINK_PARALLELISM: ${FLINK_PARALLELISM:-1}
+      SCORE_THRESHOLD: ${SCORE_THRESHOLD:-0.65}
+      MAX_RETRIES: ${MAX_RETRIES:-3}
+      LLM_RESPONSES_TOPIC: llm_responses
+      VALIDATED_TOPIC: validated_responses
+      REGEN_TOPIC: regeneration_requests
+      FLINK_PROPERTIES: "jobmanager.rpc.address: flink-jobmanager"
+    command: ["jobmanager"]
+    ports:
+      - "8081:8081"
+    depends_on:
+      - kafka-init
+
+  flink-taskmanager:
+    build:
+      context: .
+      dockerfile: flink_job/Dockerfile
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      FLINK_PROPERTIES: "jobmanager.rpc.address: flink-jobmanager"
+    command: ["taskmanager"]
+    depends_on:
+      - flink-jobmanager
+
+  flink-submit:
+    build:
+      context: .
+      dockerfile: flink_job/Dockerfile
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      FLINK_PARALLELISM: ${FLINK_PARALLELISM:-1}
+      SCORE_THRESHOLD: ${SCORE_THRESHOLD:-0.65}
+      MAX_RETRIES: ${MAX_RETRIES:-3}
+      LLM_RESPONSES_TOPIC: llm_responses
+      VALIDATED_TOPIC: validated_responses
+      REGEN_TOPIC: regeneration_requests
+    entrypoint: ["/bin/bash", "-c"]
+    command: ["flink run -py /opt/flink/usrlib/streaming_score_job.py"]
+    depends_on:
+      - flink-jobmanager
+      - flink-taskmanager
+      - kafka-init
 
 volumes:
   mongo_data:
-
-networks:
-  default:
-    driver: bridge
