@@ -5,13 +5,39 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from dataclasses import asdict
-from typing import Iterable, Mapping, MutableMapping, Optional
+from typing import Callable, Iterable, Mapping, MutableMapping, Optional, TypeVar
 
 from kafka import KafkaAdminClient, KafkaConsumer, KafkaProducer
 from kafka.admin import NewTopic
+from kafka.errors import KafkaError, NoBrokersAvailable
 
 LOGGER = logging.getLogger(__name__)
+
+T = TypeVar("T")
+
+
+def _connect_with_retry(factory: Callable[[], T], *, resource: str) -> T:
+    """Intenta construir un recurso de Kafka con reintentos."""
+
+    attempts = int(os.getenv("KAFKA_CONNECT_ATTEMPTS", "15"))
+    backoff = float(os.getenv("KAFKA_CONNECT_BACKOFF", "2.0"))
+    last_exc: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return factory()
+        except (NoBrokersAvailable, KafkaError) as exc:  # pragma: no cover - dependiente del broker
+            last_exc = exc
+            LOGGER.warning(
+                "%s no disponible aún, reintentando",
+                resource,
+                extra={"attempt": attempt, "max_attempts": attempts},
+            )
+            time.sleep(backoff)
+    assert last_exc is not None
+    LOGGER.error("Imposible conectar con %s después de %s intentos", resource, attempts)
+    raise last_exc
 
 
 def _base_config() -> dict[str, object]:
@@ -35,7 +61,7 @@ def build_producer(**overrides: object) -> KafkaProducer:
     }
     config.update(_base_config())
     config.update(overrides)
-    return KafkaProducer(**config)
+    return _connect_with_retry(lambda: KafkaProducer(**config), resource="KafkaProducer")
 
 
 def build_consumer(
@@ -61,7 +87,7 @@ def build_consumer(
     }
     config.update(_base_config())
     config.update(overrides)
-    consumer = KafkaConsumer(**config)
+    consumer = _connect_with_retry(lambda: KafkaConsumer(**config), resource="KafkaConsumer")
     if topic:
         consumer.subscribe([topic])
     return consumer
@@ -71,7 +97,7 @@ def build_admin_client(**overrides: object) -> KafkaAdminClient:
     config: MutableMapping[str, object] = {}
     config.update(_base_config())
     config.update(overrides)
-    return KafkaAdminClient(**config)
+    return _connect_with_retry(lambda: KafkaAdminClient(**config), resource="KafkaAdminClient")
 
 
 def ensure_topics(topics: Iterable[NewTopic]) -> None:

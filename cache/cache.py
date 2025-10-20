@@ -7,7 +7,17 @@ from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
 from typing import Any
 
-from pymongo import MongoClient
+from common import (
+    LLMRequest,
+    QuestionMessage,
+    ValidatedResponse,
+    build_consumer,
+    build_producer,
+    configure_logging,
+    connect_mongo,
+)
+
+LOGGER = logging.getLogger(__name__)
 
 from common import (
     LLMRequest,
@@ -164,7 +174,8 @@ class CacheService:
         group_id: str,
     ):
         self.cache = build_cache(policy, size, ttl)
-        self.mongo = MongoClient(mongo_uri)[database][collection]
+        client = connect_mongo(mongo_uri)
+        self.mongo = client[database][collection]
         self.consumer = build_consumer("", group_id=group_id)
         self.consumer.subscribe([input_topic, regeneration_topic])
         self.producer = build_producer()

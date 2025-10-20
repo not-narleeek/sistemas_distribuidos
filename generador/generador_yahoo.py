@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import os
 import random
 import time
 from datetime import datetime
@@ -11,9 +10,14 @@ from pathlib import Path
 import matplotlib
 import pandas as pd
 from kafka.admin import NewTopic
-from pymongo import MongoClient
 
-from common import QuestionMessage, build_producer, ensure_topics, configure_logging
+from common import (
+    QuestionMessage,
+    build_producer,
+    configure_logging,
+    connect_mongo,
+    ensure_topics,
+)
 
 matplotlib.use("Agg")
 
@@ -106,7 +110,7 @@ def load_questions_from_csv(csv_path: Path) -> list[dict[str, object]]:
 
 
 def load_questions_from_mongo(mongo_uri: str, db_name: str, coll_name: str) -> list[dict[str, object]]:
-    client = MongoClient(mongo_uri)
+    client = connect_mongo(mongo_uri)
     collection = client[db_name][coll_name]
     return list(
         collection.find(

@@ -3,9 +3,9 @@ from __future__ import annotations
 import argparse
 import logging
 
-from pymongo import MongoClient, UpdateOne
+from pymongo import UpdateOne
 
-from common import ValidatedResponse, build_consumer, configure_logging
+from common import ValidatedResponse, build_consumer, configure_logging, connect_mongo
 
 LOGGER = logging.getLogger(__name__)
 
@@ -21,8 +21,7 @@ class StorageService:
         topic: str,
         group_id: str,
     ):
-        self.client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
-        self.client.admin.command("ping")
+        self.client = connect_mongo(mongo_uri)
         self.collection = self.client[database][collection]
         self.metrics = self.client[database][metrics_collection]
         self.consumer = build_consumer(topic, group_id=group_id)

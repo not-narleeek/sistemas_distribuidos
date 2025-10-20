@@ -7,6 +7,7 @@ from .kafka_utils import (
     ensure_topics,
 )
 from .logging import configure_logging
+from .mongo import connect_mongo
 from .models import (
     QuestionMessage,
     LLMRequest,
@@ -21,6 +22,7 @@ __all__ = [
     "build_admin_client",
     "ensure_topics",
     "configure_logging",
+    "connect_mongo",
     "QuestionMessage",
     "LLMRequest",
     "LLMResponse",
