@@ -6,7 +6,7 @@ from .kafka_utils import (
     build_admin_client,
     ensure_topics,
 )
-from .logging import configure_logging
+from .json_logging import configure_logging
 from .mongo import connect_mongo
 from .models import (
     QuestionMessage,
