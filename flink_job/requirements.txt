@@ -1,2 +1,2 @@
-pyflink==1.17.1
+apache-flink==1.17.1
 scikit-learn==1.4.2

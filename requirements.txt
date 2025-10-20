@@ -3,4 +3,4 @@ pymongo
 pandas
 matplotlib
 scikit-learn
-pyflink
+apache-flink
