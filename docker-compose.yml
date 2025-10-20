@@ -153,15 +153,15 @@ services:
       context: .
       dockerfile: flink_job/Dockerfile
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - FLINK_PARALLELISM=1
-      - SCORE_THRESHOLD=${SCORE_THRESHOLD:-0.65}
-      - MAX_RETRIES=${MAX_RETRIES:-3}
-      - LLM_RESPONSES_TOPIC=llm_responses
-      - VALIDATED_TOPIC=validated_responses
-      - REGEN_TOPIC=regeneration_requests
-      - FLINK_PROPERTIES=jobmanager.rpc.address: flink-jobmanager
+      JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      FLINK_PARALLELISM: ${FLINK_PARALLELISM:-1}
+      SCORE_THRESHOLD: ${SCORE_THRESHOLD:-0.65}
+      MAX_RETRIES: ${MAX_RETRIES:-3}
+      LLM_RESPONSES_TOPIC: llm_responses
+      VALIDATED_TOPIC: validated_responses
+      REGEN_TOPIC: regeneration_requests
+      FLINK_PROPERTIES: "jobmanager.rpc.address: flink-jobmanager"
     command: ["jobmanager"]
     ports:
       - "8081:8081"
@@ -173,9 +173,9 @@ services:
       context: .
       dockerfile: flink_job/Dockerfile
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - FLINK_PROPERTIES=jobmanager.rpc.address: flink-jobmanager
+      JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      FLINK_PROPERTIES: "jobmanager.rpc.address: flink-jobmanager"
     command: ["taskmanager"]
     depends_on:
       - flink-jobmanager
@@ -185,13 +185,13 @@ services:
       context: .
       dockerfile: flink_job/Dockerfile
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - FLINK_PARALLELISM=1
-      - SCORE_THRESHOLD=${SCORE_THRESHOLD:-0.65}
-      - MAX_RETRIES=${MAX_RETRIES:-3}
-      - LLM_RESPONSES_TOPIC=llm_responses
-      - VALIDATED_TOPIC=validated_responses
-      - REGEN_TOPIC=regeneration_requests
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      FLINK_PARALLELISM: ${FLINK_PARALLELISM:-1}
+      SCORE_THRESHOLD: ${SCORE_THRESHOLD:-0.65}
+      MAX_RETRIES: ${MAX_RETRIES:-3}
+      LLM_RESPONSES_TOPIC: llm_responses
+      VALIDATED_TOPIC: validated_responses
+      REGEN_TOPIC: regeneration_requests
     entrypoint: ["/bin/bash", "-c"]
     command: ["flink run -py /opt/flink/usrlib/streaming_score_job.py"]
     depends_on:
