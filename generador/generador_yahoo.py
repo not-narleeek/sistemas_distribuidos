@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import random
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -10,6 +11,10 @@ from pathlib import Path
 import matplotlib
 import pandas as pd
 from kafka.admin import NewTopic
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:  # pragma: no cover - afecta ejecución directa
+    sys.path.append(str(REPO_ROOT))
 
 from common import (
     QuestionMessage,

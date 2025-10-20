@@ -19,17 +19,6 @@ from common import (
 
 LOGGER = logging.getLogger(__name__)
 
-from common import (
-    LLMRequest,
-    QuestionMessage,
-    ValidatedResponse,
-    build_consumer,
-    build_producer,
-    configure_logging,
-)
-
-LOGGER = logging.getLogger(__name__)
-
 
 @dataclass
 class CacheEntry:
