@@ -2,4 +2,4 @@
 set -euo pipefail
 
 echo "[run] Iniciando ecosistema distribuido..."
-docker-compose up -d
+docker compose up -d
