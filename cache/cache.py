@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 import argparse
-import json
-import socket
-import sys
+import logging
 import time
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
 from typing import Any
 
-from bson import ObjectId
-from pymongo import MongoClient
+from common import (
+    LLMRequest,
+    QuestionMessage,
+    ValidatedResponse,
+    build_consumer,
+    build_producer,
+    configure_logging,
+    connect_mongo,
+)
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -26,10 +33,7 @@ class CacheBase:
         self.cache: dict[str, CacheEntry] = {}
         self.hits = 0
         self.misses = 0
-        self.request_count = 0
-        self.total_latency = 0.0
 
-    # Métodos que las políticas deben implementar
     def get(self, key: str) -> dict[str, Any] | None:  # pragma: no cover - abstract
         raise NotImplementedError
 
@@ -43,22 +47,6 @@ class CacheBase:
         if self.ttl <= 0 or key not in self.cache:
             return False
         return time.time() - self.cache[key].stored_at > self.ttl
-
-    def record_latency(self, latency: float) -> None:
-        self.total_latency += latency
-        self.request_count += 1
-
-    def stats(self) -> dict[str, float]:
-        hit_rate = self.hits / self.request_count if self.request_count else 0.0
-        miss_rate = self.misses / self.request_count if self.request_count else 0.0
-        avg_latency = self.total_latency / self.request_count if self.request_count else 0.0
-        return {
-            "hits": self.hits,
-            "misses": self.misses,
-            "hit_rate": round(hit_rate, 4),
-            "miss_rate": round(miss_rate, 4),
-            "avg_latency": round(avg_latency, 4),
-        }
 
 
 class LRUCache(CacheBase):
@@ -148,53 +136,6 @@ class FIFOCache(CacheBase):
         self.cache[key] = CacheEntry(value=value, stored_at=time.time())
 
 
-class ServiceClient:
-    def __init__(
-        self,
-        host: str,
-        port: int,
-        timeout: float = 5.0,
-        retries: int = 3,
-        backoff: float = 0.5,
-    ):
-        self.host = host
-        self.port = port
-        self.timeout = timeout
-        self.retries = retries
-        self.backoff = backoff
-
-    def request(self, payload: dict[str, Any]) -> dict[str, Any]:
-        message = json.dumps(payload) + "\n"
-        for attempt in range(self.retries):
-            try:
-                with socket.create_connection((self.host, self.port), timeout=self.timeout) as sock:
-                    sock.settimeout(self.timeout)
-                    sock.sendall(message.encode())
-                    response = sock.recv(16384).decode().strip()
-                    return json.loads(response) if response else {}
-            except (socket.error, json.JSONDecodeError) as exc:
-                wait_time = self.backoff * (attempt + 1)
-                print(
-                    f"[Cache] Error comunicando con {self.host}:{self.port} ({exc}). Reintentando en {wait_time:.1f}s",
-                    file=sys.stderr,
-                )
-                time.sleep(wait_time)
-        raise ConnectionError(f"No se pudo contactar a {self.host}:{self.port}")
-
-
-def wait_for_service(host: str, port: int, timeout: int = 60) -> bool:
-    start = time.time()
-    while time.time() - start < timeout:
-        try:
-            with socket.create_connection((host, port), timeout=2):
-                print(f"[Cache] Servicio {host}:{port} disponible")
-                return True
-        except (socket.error, ConnectionRefusedError):
-            print(f"[Cache] Esperando a {host}:{port}...")
-            time.sleep(2)
-    return False
-
-
 def build_cache(policy: str, size: int, ttl: float) -> CacheBase:
     if policy == "lru":
         return LRUCache(size, ttl)
@@ -202,236 +143,162 @@ def build_cache(policy: str, size: int, ttl: float) -> CacheBase:
         return LFUCache(size, ttl)
     if policy == "fifo":
         return FIFOCache(size, ttl)
-    raise ValueError(f"Política desconocida: {policy}")
+    raise ValueError(f"Política de caché desconocida: {policy}")
+
+
+class CacheService:
+    def __init__(
+        self,
+        *,
+        policy: str,
+        size: int,
+        ttl: float,
+        mongo_uri: str,
+        database: str,
+        collection: str,
+        input_topic: str,
+        llm_topic: str,
+        validated_topic: str,
+        regeneration_topic: str,
+        group_id: str,
+    ):
+        self.cache = build_cache(policy, size, ttl)
+        client = connect_mongo(mongo_uri)
+        self.mongo = client[database][collection]
+        self.consumer = build_consumer("", group_id=group_id)
+        self.consumer.subscribe([input_topic, regeneration_topic])
+        self.producer = build_producer()
+        self.llm_topic = llm_topic
+        self.validated_topic = validated_topic
+        self.regen_topic = regeneration_topic
+
+    def _lookup_storage(self, question_id: str) -> dict[str, Any] | None:
+        record = self.mongo.find_one({"id_pregunta": question_id})
+        if not record or not record.get("respuesta_llm"):
+            return None
+        return {
+            "question_id": question_id,
+            "llm_answer": record.get("respuesta_llm", ""),
+            "best_answer": record.get("respuesta_dataset", ""),
+            "score": float(record.get("score", 0.0)),
+            "accepted": bool(record.get("aceptado", False)),
+            "title": record.get("pregunta", ""),
+            "content": record.get("contenido", ""),
+        }
+
+    def _emit_validated(self, message: QuestionMessage, cached: dict[str, Any], source: str) -> None:
+        validated = ValidatedResponse(
+            message_id=message.message_id,
+            trace_id=message.trace_id,
+            question_id=message.question_id,
+            title=cached.get("title", message.title),
+            content=cached.get("content", message.content),
+            llm_answer=cached.get("llm_answer", ""),
+            best_answer=cached.get("best_answer", message.best_answer),
+            score=float(cached.get("score", 0.0)),
+            accepted=bool(cached.get("accepted", True)),
+            source=source,
+            attempts=message.attempts,
+        )
+        self.producer.send(self.validated_topic, key=validated.message_id, value=validated.asdict())
+        self.producer.flush()
+
+    def _emit_llm_request(self, message: QuestionMessage) -> None:
+        prompt_parts = [message.title, message.content]
+        prompt = "\n\n".join(part for part in prompt_parts if part)
+        request = LLMRequest(
+            message_id=message.message_id,
+            trace_id=message.trace_id,
+            question_id=message.question_id,
+            title=message.title,
+            content=message.content,
+            prompt=prompt,
+            best_answer=message.best_answer,
+            attempts=message.attempts + 1,
+        )
+        self.producer.send(self.llm_topic, key=request.message_id, value=request.asdict())
+        self.producer.flush()
+
+    def process(self) -> None:
+        LOGGER.info("Cache service iniciado")
+        while True:
+            records = self.consumer.poll(timeout_ms=1000)
+            for _, messages in records.items():
+                for record in messages:
+                    payload = record.value
+                    if record.topic == self.regen_topic:
+                        LOGGER.info(
+                            "Reintento solicitado",
+                            extra={"question_id": payload.get("question_id"), "attempts": payload.get("attempts")},
+                        )
+                        attempts = int(payload.get("attempts", 0))
+                        request = LLMRequest(
+                            message_id=payload["message_id"],
+                            trace_id=payload["trace_id"],
+                            question_id=payload["question_id"],
+                            title=payload.get("title", ""),
+                            content=payload.get("content", ""),
+                            prompt=payload.get("prompt", ""),
+                            best_answer=payload.get("best_answer", ""),
+                            attempts=attempts + 1,
+                        )
+                        self.producer.send(self.llm_topic, key=request.message_id, value=request.asdict())
+                        self.producer.flush()
+                        continue
+
+                    message = QuestionMessage(**payload)
+                    cached = self.cache.get(message.question_id)
+                    if cached:
+                        LOGGER.info("Hit de caché", extra={"question_id": message.question_id})
+                        self._emit_validated(message, cached, source="cache")
+                    else:
+                        storage_hit = self._lookup_storage(message.question_id)
+                        if storage_hit:
+                            LOGGER.info(
+                                "Respuesta encontrada en almacenamiento",
+                                extra={"question_id": message.question_id},
+                            )
+                            self.cache.put(message.question_id, storage_hit)
+                            self._emit_validated(message, storage_hit, source="storage")
+                        else:
+                            LOGGER.info(
+                                "Cache miss", extra={"question_id": message.question_id}
+                            )
+                            self._emit_llm_request(message)
+                if messages:
+                    self.consumer.commit()
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--policy", choices=["lru", "lfu", "fifo"], required=True)
-    parser.add_argument("--size", type=int, default=100)
-    parser.add_argument("--ttl", type=float, default=0.0, help="TTL en segundos para cada entrada de caché")
-    parser.add_argument("--mongo", default="mongodb://mongo:27017/")
-    parser.add_argument("--db", default="yahoo_db")
-    parser.add_argument("--coll", default="questions")
-    parser.add_argument("--port", type=int, default=5000)
-    parser.add_argument("--dummy_host", default="llm")
-    parser.add_argument("--dummy_port", type=int, default=6000)
-    parser.add_argument("--score_host", default="score")
-    parser.add_argument("--score_port", type=int, default=7000)
-    parser.add_argument("--storage_host", default="storage")
-    parser.add_argument("--storage_port", type=int, default=7100)
-    parser.add_argument(
-        "--llm_timeout",
-        type=float,
-        default=15.0,
-        help="Tiempo máximo de espera (s) para obtener respuesta del LLM",
-    )
-    parser.add_argument(
-        "--llm_retries",
-        type=int,
-        default=3,
-        help="Número de reintentos al contactar al LLM",
-    )
+    parser = argparse.ArgumentParser(description="Servicio de caché productor/consumidor")
+    parser.add_argument("--policy", default="lru", choices=["lru", "lfu", "fifo"])
+    parser.add_argument("--size", type=int, default=1024)
+    parser.add_argument("--ttl", type=float, default=3600)
+    parser.add_argument("--mongo-uri", default="mongodb://mongo:27017/")
+    parser.add_argument("--mongo-db", default="yahoo_db")
+    parser.add_argument("--mongo-coll", default="results")
+    parser.add_argument("--input-topic", default="questions_in")
+    parser.add_argument("--llm-topic", default="llm_requests")
+    parser.add_argument("--validated-topic", default="validated_responses")
+    parser.add_argument("--regeneration-topic", default="regeneration_requests")
+    parser.add_argument("--group-id", default="cache-service")
     args = parser.parse_args()
-
-    cache = build_cache(args.policy, args.size, args.ttl)
-
-    mongo_host = args.mongo.split("//")[-1].split(":")[0]
-    if not wait_for_service(mongo_host, 27017):
-        print("[Cache] MongoDB no disponible", file=sys.stderr)
-        sys.exit(1)
-
-    if not wait_for_service(args.dummy_host, args.dummy_port):
-        print("[Cache] Servicio LLM no disponible", file=sys.stderr)
-        sys.exit(1)
-
-    if not wait_for_service(args.score_host, args.score_port):
-        print("[Cache] Servicio de scoring no disponible", file=sys.stderr)
-        sys.exit(1)
-
-    if not wait_for_service(args.storage_host, args.storage_port):
-        print("[Cache] Servicio de almacenamiento no disponible", file=sys.stderr)
-        sys.exit(1)
-
-    try:
-        client = MongoClient(args.mongo)
-        client.admin.command("ping")
-        collection = client[args.db][args.coll]
-    except Exception as exc:
-        print(f"[Cache] Error conectando a MongoDB: {exc}", file=sys.stderr)
-        sys.exit(1)
-
-    llm_client = ServiceClient(
-        args.dummy_host,
-        args.dummy_port,
-        timeout=args.llm_timeout,
-        retries=args.llm_retries,
+    configure_logging()
+    service = CacheService(
+        policy=args.policy,
+        size=args.size,
+        ttl=args.ttl,
+        mongo_uri=args.mongo_uri,
+        database=args.mongo_db,
+        collection=args.mongo_coll,
+        input_topic=args.input_topic,
+        llm_topic=args.llm_topic,
+        validated_topic=args.validated_topic,
+        regeneration_topic=args.regeneration_topic,
+        group_id=args.group_id,
     )
-    score_client = ServiceClient(args.score_host, args.score_port)
-    storage_client = ServiceClient(args.storage_host, args.storage_port)
-
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    try:
-        server.bind(("0.0.0.0", args.port))
-        server.listen(5)
-        print(
-            f"[Cache] Servicio iniciado en 0.0.0.0:{args.port} con política {args.policy.upper()} y TTL={args.ttl}s"
-        )
-    except Exception as exc:
-        print(f"[Cache] Error iniciando servidor: {exc}", file=sys.stderr)
-        sys.exit(1)
-
-    while True:
-        conn, addr = server.accept()
-        with conn:
-            data = conn.recv(4096).decode().strip()
-            if not data:
-                continue
-
-            if data.upper() == "STATS":
-                conn.sendall(json.dumps(cache.stats()).encode() + b"\n")
-                continue
-
-            try:
-                payload = json.loads(data)
-            except json.JSONDecodeError:
-                conn.sendall(b"INVALID_JSON\n")
-                continue
-
-            key = payload.get("id")
-            if not key:
-                conn.sendall(b"MISSING_ID\n")
-                continue
-
-            start = time.time()
-            cached = cache.get(key)
-            if cached:
-                latency = time.time() - start
-                cache.record_latency(latency)
-                response = {
-                    "question_id": key,
-                    "score": cached.get("score"),
-                    "accepted": cached.get("accepted", False),
-                    "source": "cache",
-                }
-                conn.sendall(
-                    f"HIT {key} ({latency:.4f}s)\n{json.dumps(response)}\n".encode()
-                )
-                try:
-                    storage_client.request(
-                        {
-                            "action": "increment_hit",
-                            "data": {"id_pregunta": key},
-                        }
-                    )
-                    storage_client.request(
-                        {
-                            "action": "record_metrics",
-                            "data": {"hit": True, "latency": latency, "score": cached.get("score", 0.0)},
-                        }
-                    )
-                except Exception as exc:
-                    print(f"[Cache] No se pudo registrar hit: {exc}", file=sys.stderr)
-                continue
-
-            # Cache miss
-            try:
-                object_id = ObjectId(key)
-            except Exception:
-                conn.sendall(f"INVALID_ID {key}\n".encode())
-                continue
-
-            doc = collection.find_one({"_id": object_id})
-            if not doc:
-                conn.sendall(f"NOTFOUND {key}\n".encode())
-                continue
-
-            question_title = doc.get("question_title", "")
-            question_content = doc.get("question_content", "")
-            best_answer = doc.get("best_answer", "")
-
-            try:
-                llm_response = llm_client.request(
-                    {
-                        "id": key,
-                        "title": question_title,
-                        "content": question_content,
-                    }
-                )
-            except Exception as exc:
-                conn.sendall(f"ERROR LLM {exc}\n".encode())
-                continue
-
-            if "generated_answer" not in llm_response:
-                conn.sendall(f"ERROR LLM_RESPONSE {llm_response}\n".encode())
-                continue
-
-            llm_answer = llm_response["generated_answer"]
-
-            try:
-                score_response = score_client.request(
-                    {
-                        "question_id": key,
-                        "best_answer": best_answer,
-                        "llm_answer": llm_answer,
-                    }
-                )
-            except Exception as exc:
-                conn.sendall(f"ERROR SCORE {exc}\n".encode())
-                continue
-
-            score_value = score_response.get("score", 0.0)
-            accepted = score_response.get("accepted", False)
-
-            result_payload = {
-                "question_id": key,
-                "question_title": question_title,
-                "question_content": question_content,
-                "best_answer": best_answer,
-                "llm_answer": llm_answer,
-                "score": score_value,
-                "accepted": accepted,
-                "scoring_latency_ms": score_response.get("elapsed_ms"),
-            }
-
-            cache.put(key, result_payload)
-            latency = time.time() - start
-            cache.record_latency(latency)
-
-            response = {
-                "question_id": key,
-                "score": score_value,
-                "accepted": accepted,
-                "source": "origin",
-            }
-            conn.sendall(
-                f"MISS {key} ({latency:.4f}s)\n{json.dumps(response)}\n".encode()
-            )
-
-            try:
-                storage_client.request(
-                    {
-                        "action": "store_result",
-                        "data": {
-                            "id_pregunta": key,
-                            "pregunta": question_title,
-                            "respuesta_dataset": best_answer,
-                            "respuesta_llm": llm_answer,
-                            "score": score_value,
-                            "aceptado": accepted,
-                        },
-                    }
-                )
-                storage_client.request(
-                    {
-                        "action": "record_metrics",
-                        "data": {"hit": False, "latency": latency, "score": score_value},
-                    }
-                )
-            except Exception as exc:
-                print(f"[Cache] No se pudo persistir el resultado: {exc}", file=sys.stderr)
+    service.process()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover - punto de entrada
     main()

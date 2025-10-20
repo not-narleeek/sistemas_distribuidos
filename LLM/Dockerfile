@@ -1,10 +1,13 @@
 FROM python:3.10-slim
 
-WORKDIR /LLM
+WORKDIR /app
 
-COPY requirements.txt .
+COPY LLM/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY dummy_LLM.py .
+COPY common /app/common
+COPY LLM/kafka_llm_consumer.py /app/kafka_llm_consumer.py
 
-CMD ["python", "dummy_LLM.py"]
+ENV PYTHONPATH=/app:/app/common
+
+ENTRYPOINT ["python", "kafka_llm_consumer.py"]
