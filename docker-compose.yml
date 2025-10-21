@@ -197,11 +197,11 @@ services:
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
-        until nc -z "$JOB_MANAGER_RPC_ADDRESS" 8081; do
+        until nc -z "$$JOB_MANAGER_RPC_ADDRESS" 8081; do
           echo "Waiting for Flink JobManager..."
           sleep 2
         done
-        flink run -m ${JOB_MANAGER_RPC_ADDRESS}:8081 -py /opt/flink/usrlib/streaming_score_job.py
+        flink run -m $$JOB_MANAGER_RPC_ADDRESS:8081 -py /opt/flink/usrlib/streaming_score_job.py
     depends_on:
       - flink-jobmanager
       - flink-taskmanager
