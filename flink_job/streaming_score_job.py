@@ -107,12 +107,13 @@ def build_consumer(topic: str) -> FlinkKafkaConsumer:
 
 def build_producer(topic: str) -> FlinkKafkaProducer:
     properties = {"bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")}
-    return FlinkKafkaProducer(
+    producer = FlinkKafkaProducer(
         topic,
         SimpleStringSchema(),
         properties,
-        FlinkKafkaProducer.Semantic.AT_LEAST_ONCE,
     )
+    producer.set_flush_on_checkpoint(True)
+    return producer
 
 
 def main():  # pragma: no cover - ejecutado en cluster
