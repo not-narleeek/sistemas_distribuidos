@@ -117,6 +117,8 @@ def build_producer(topic: str) -> FlinkKafkaProducer:
         SimpleStringSchema(),
         properties,
     )
+    producer.set_flush_on_checkpoint(True)
+    return producer
 
 
 def main():  # pragma: no cover - ejecutado en cluster
