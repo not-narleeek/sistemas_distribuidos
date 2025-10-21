@@ -108,6 +108,7 @@ def ensure_topics(topics: Iterable[NewTopic]) -> None:
     new_topics = [topic for topic in topics if topic.name not in existing]
     if not new_topics:
         LOGGER.info("No hay tópicos nuevos por crear")
+        admin.close()
         return
     try:
         admin.create_topics(new_topics=new_topics, validate_only=False)

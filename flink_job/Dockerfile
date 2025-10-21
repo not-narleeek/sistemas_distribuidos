@@ -15,7 +15,7 @@ RUN wget -qO /opt/flink/lib/flink-sql-connector-kafka.jar \
 COPY common /opt/flink/common
 COPY flink_job/streaming_score_job.py /opt/flink/usrlib/streaming_score_job.py
 
-ENV PYTHONPATH=/opt/flink/usrlib:/opt/flink/common
+ENV PYTHONPATH=/opt/flink/usrlib:/opt/flink
 
 USER flink
 
