@@ -11,7 +11,12 @@ from typing import Callable, Iterable, Mapping, MutableMapping, Optional, TypeVa
 
 from kafka import KafkaAdminClient, KafkaConsumer, KafkaProducer
 from kafka.admin import NewTopic
-from kafka.errors import KafkaError, NoBrokersAvailable
+from kafka.errors import (
+    KafkaError,
+    NoBrokersAvailable,
+    TopicAlreadyExistsError,
+    UnknownTopicOrPartitionError,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -100,20 +105,53 @@ def build_admin_client(**overrides: object) -> KafkaAdminClient:
     return _connect_with_retry(lambda: KafkaAdminClient(**config), resource="KafkaAdminClient")
 
 
+def _wait_for_topic_metadata(admin: KafkaAdminClient, topics: Iterable[str]) -> None:
+    """Bloquea hasta que Kafka reporte particiones para los tópicos dados."""
+
+    timeout = float(os.getenv("KAFKA_TOPIC_WAIT_TIMEOUT", "30"))
+    deadline = time.time() + timeout
+    names = list(topics)
+    while time.time() < deadline:
+        try:
+            descriptions = admin.describe_topics(names)
+        except UnknownTopicOrPartitionError:
+            # El broker aún no conoce alguno de los tópicos, esperamos y reintentamos.
+            time.sleep(1)
+            continue
+
+        if all(description.get("partitions") for description in descriptions):
+            return
+
+        time.sleep(1)
+
+    LOGGER.warning(
+        "Los tópicos %s no reportaron particiones tras %.1fs",
+        ", ".join(names),
+        timeout,
+    )
+
+
 def ensure_topics(topics: Iterable[NewTopic]) -> None:
     """Crea los tópicos indicados si aún no existen."""
 
     admin = build_admin_client()
-    existing = admin.list_topics()
-    new_topics = [topic for topic in topics if topic.name not in existing]
-    if not new_topics:
-        LOGGER.info("No hay tópicos nuevos por crear")
-        return
     try:
-        admin.create_topics(new_topics=new_topics, validate_only=False)
-        LOGGER.info("Tópicos creados: %s", ", ".join(topic.name for topic in new_topics))
-    except Exception as exc:  # pragma: no cover - dependiente del broker
-        LOGGER.warning("No fue posible crear tópicos: %s", exc)
+        existing = admin.list_topics()
+        new_topics = [topic for topic in topics if topic.name not in existing]
+        if new_topics:
+            try:
+                admin.create_topics(new_topics=new_topics, validate_only=False)
+                LOGGER.info(
+                    "Tópicos creados: %s", ", ".join(topic.name for topic in new_topics)
+                )
+            except TopicAlreadyExistsError:
+                LOGGER.debug("Los tópicos ya existían al intentar crearlos")
+            except Exception as exc:  # pragma: no cover - dependiente del broker
+                LOGGER.warning("No fue posible crear tópicos: %s", exc)
+        else:
+            LOGGER.info("No hay tópicos nuevos por crear")
+
+        _wait_for_topic_metadata(admin, [topic.name for topic in topics])
     finally:
         admin.close()
 
