@@ -107,7 +107,10 @@ def build_consumer(topic: str) -> FlinkKafkaConsumer:
 
 def build_producer(topic: str) -> FlinkKafkaProducer:
     properties = {"bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")}
-    producer = FlinkKafkaProducer(
+    # Flink 1.17 removed the exposed flush-on-checkpoint toggle from the Python
+    # wrapper, but the producer keeps it enabled by default, preserving the
+    # original at-least-once guarantees without additional configuration.
+    return FlinkKafkaProducer(
         topic,
         SimpleStringSchema(),
         properties,
