@@ -192,8 +192,16 @@ services:
       LLM_RESPONSES_TOPIC: llm_responses
       VALIDATED_TOPIC: validated_responses
       REGEN_TOPIC: regeneration_requests
+      JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+      FLINK_PROPERTIES: "jobmanager.rpc.address: flink-jobmanager"
     entrypoint: ["/bin/bash", "-c"]
-    command: ["flink run -py /opt/flink/usrlib/streaming_score_job.py"]
+    command:
+      - |
+        until nc -z "$JOB_MANAGER_RPC_ADDRESS" 8081; do
+          echo "Waiting for Flink JobManager..."
+          sleep 2
+        done
+        flink run -m ${JOB_MANAGER_RPC_ADDRESS}:8081 -py /opt/flink/usrlib/streaming_score_job.py
     depends_on:
       - flink-jobmanager
       - flink-taskmanager
