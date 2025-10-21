@@ -18,7 +18,9 @@ from pyflink.datastream.state import ValueState, ValueStateDescriptor
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from common import ValidatedResponse
+from kafka.admin import NewTopic
+
+from common import ValidatedResponse, ensure_topics
 
 
 @dataclass
@@ -107,11 +109,13 @@ def build_consumer(topic: str) -> FlinkKafkaConsumer:
 
 def build_producer(topic: str) -> FlinkKafkaProducer:
     properties = {"bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")}
+    # Flink 1.17 removed the exposed flush-on-checkpoint toggle from the Python
+    # wrapper, but the producer keeps it enabled by default, preserving the
+    # original at-least-once guarantees without additional configuration.
     return FlinkKafkaProducer(
         topic,
         SimpleStringSchema(),
         properties,
-        FlinkKafkaProducer.Semantic.AT_LEAST_ONCE,
     )
 
 
@@ -123,7 +127,29 @@ def main():  # pragma: no cover - ejecutado en cluster
         max_attempts=int(os.getenv("MAX_RETRIES", "3")),
     )
 
-    consumer = build_consumer(os.getenv("LLM_RESPONSES_TOPIC", "llm_responses"))
+    replication = int(os.getenv("KAFKA_TOPIC_REPLICATION", "1"))
+    partitions = int(os.getenv("KAFKA_TOPIC_PARTITIONS", "1"))
+    llm_topic = os.getenv("LLM_RESPONSES_TOPIC", "llm_responses")
+    validated_topic = os.getenv("VALIDATED_TOPIC", "validated_responses")
+    regeneration_topic = os.getenv("REGEN_TOPIC", "regeneration_requests")
+
+    ensure_topics(
+        [
+            NewTopic(name=llm_topic, num_partitions=partitions, replication_factor=replication),
+            NewTopic(
+                name=validated_topic,
+                num_partitions=partitions,
+                replication_factor=replication,
+            ),
+            NewTopic(
+                name=regeneration_topic,
+                num_partitions=partitions,
+                replication_factor=replication,
+            ),
+        ]
+    )
+
+    consumer = build_consumer(llm_topic)
     stream = env.add_source(consumer).name("llm-responses-source")
 
     regeneration_tag = OutputTag("regeneration", Types.STRING())
@@ -133,11 +159,11 @@ def main():  # pragma: no cover - ejecutado en cluster
         .process(ScoreProcess(cfg, regeneration_tag))
     )
 
-    validated_sink = build_producer(os.getenv("VALIDATED_TOPIC", "validated_responses"))
+    validated_sink = build_producer(validated_topic)
     processed.add_sink(validated_sink).name("validated-sink")
 
     regeneration_stream = processed.get_side_output(regeneration_tag)
-    regeneration_sink = build_producer(os.getenv("REGEN_TOPIC", "regeneration_requests"))
+    regeneration_sink = build_producer(regeneration_topic)
     regeneration_stream.add_sink(regeneration_sink).name("regeneration-sink")
 
     env.execute("flink-streaming-score")

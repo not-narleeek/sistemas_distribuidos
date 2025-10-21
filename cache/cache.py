@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import time
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
@@ -15,7 +16,9 @@ from common import (
     build_producer,
     configure_logging,
     connect_mongo,
+    ensure_topics,
 )
+from kafka.admin import NewTopic
 
 LOGGER = logging.getLogger(__name__)
 
@@ -284,6 +287,27 @@ def main() -> None:
     parser.add_argument("--group-id", default="cache-service")
     args = parser.parse_args()
     configure_logging()
+    partitions = int(os.getenv("KAFKA_TOPIC_PARTITIONS", "1"))
+    replication = int(os.getenv("KAFKA_TOPIC_REPLICATION", "1"))
+    ensure_topics(
+        [
+            NewTopic(
+                name=args.llm_topic,
+                num_partitions=partitions,
+                replication_factor=replication,
+            ),
+            NewTopic(
+                name=args.validated_topic,
+                num_partitions=partitions,
+                replication_factor=replication,
+            ),
+            NewTopic(
+                name=args.regeneration_topic,
+                num_partitions=partitions,
+                replication_factor=replication,
+            ),
+        ]
+    )
     service = CacheService(
         policy=args.policy,
         size=args.size,
