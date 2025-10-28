@@ -198,7 +198,11 @@ services:
     command:
       - |
         until nc -z "$$JOB_MANAGER_RPC_ADDRESS" 8081; do
-          echo "Waiting for Flink JobManager..."
+          echo "Waiting for Flink JobManager socket..."
+          sleep 2
+        done
+        until wget --spider -q "http://$$JOB_MANAGER_RPC_ADDRESS:8081/jobs/overview"; do
+          echo "Waiting for Flink REST API..."
           sleep 2
         done
         flink run -m $$JOB_MANAGER_RPC_ADDRESS:8081 -py /opt/flink/usrlib/streaming_score_job.py

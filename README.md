@@ -105,5 +105,6 @@ docs/architecture.puml        # Diagrama PlantUML
 - El `docker-compose.yml` evita la creación automática de tópicos; el generador inicializa `questions_in`. Los demás servicios crean los necesarios bajo demanda.
 - En entornos sin conexión a internet el `llm-consumer` funciona en modo offline y devuelve respuestas determinísticas.
 - Se recomienda monitorear el consumo de recursos de Kafka y Flink al aumentar el volumen de mensajes.
+- En máquinas Windows (Docker Desktop + WSL2) el arranque del JobManager puede tardar unos segundos adicionales; el servicio `flink-submit` espera ahora a que la API REST (`/jobs/overview`) responda antes de enviar el *job*, evitando errores transitorios como `Job ... not found` en los logs.
 
 Con esta infraestructura modular es posible analizar empíricamente el impacto de un modelo asíncrono en la latencia, throughput y calidad de las respuestas, cumpliendo los objetivos de la Tarea 2.
