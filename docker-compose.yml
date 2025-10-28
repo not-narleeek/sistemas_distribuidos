@@ -218,7 +218,7 @@ services:
             pass
 
         sys.exit(1)
-PY
+        PY
         do
           echo "Waiting for Flink REST API..."
           sleep 2
