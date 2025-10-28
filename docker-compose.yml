@@ -201,7 +201,7 @@ services:
           echo "Waiting for Flink JobManager socket..."
           sleep 2
         done
-        until wget --spider -q "http://$$JOB_MANAGER_RPC_ADDRESS:8081/jobs/overview"; do
+        until curl --silent --fail "http://$$JOB_MANAGER_RPC_ADDRESS:8081/jobs/overview" >/dev/null; do
           echo "Waiting for Flink REST API..."
           sleep 2
         done
