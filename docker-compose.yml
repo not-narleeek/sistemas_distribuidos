@@ -201,7 +201,25 @@ services:
           echo "Waiting for Flink JobManager socket..."
           sleep 2
         done
-        until curl --silent --fail "http://$$JOB_MANAGER_RPC_ADDRESS:8081/jobs/overview" >/dev/null; do
+        until python3 - <<'PY' >/dev/null 2>&1
+        import os
+        import sys
+        from urllib import error, request
+
+        url = f"http://{os.environ['JOB_MANAGER_RPC_ADDRESS']}:8081/jobs/overview"
+
+        try:
+            with request.urlopen(url, timeout=2) as response:
+                if response.status < 400:
+                    sys.exit(0)
+        except error.HTTPError:
+            pass
+        except Exception:
+            pass
+
+        sys.exit(1)
+PY
+        do
           echo "Waiting for Flink REST API..."
           sleep 2
         done
