@@ -3,7 +3,7 @@ FROM flink:1.17.1-scala_2.12
 USER root
 
 RUN apt-get update \
-    && apt-get install -y python3 python3-pip python-is-python3 netcat-openbsd \
+    && apt-get install -y python3 python3-pip python-is-python3 netcat-openbsd curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY flink_job/requirements.txt /opt/flink/requirements.txt
