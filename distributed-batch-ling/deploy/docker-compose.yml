@@ -1,0 +1,109 @@
+version: '3.9'
+
+networks:
+  hadoop_net:
+    driver: bridge
+
+volumes:
+  namenode-data:
+  datanode-data:
+  history-data:
+
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    hostname: namenode
+    restart: unless-stopped
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    environment:
+      - CLUSTER_NAME=hadoop-local
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_CONF_dfs_namenode_name_dir=file:///hadoop/dfs/name
+    volumes:
+      - namenode-data:/hadoop/dfs/name
+      - ../logs/namenode:/opt/hadoop/logs
+      - ./hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./hadoop/yarn-site.xml:/opt/hadoop/etc/hadoop/yarn-site.xml
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "jps | grep NameNode"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+    networks:
+      - hadoop_net
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode
+    hostname: datanode
+    restart: unless-stopped
+    depends_on:
+      namenode:
+        condition: service_healthy
+    environment:
+      - CLUSTER_NAME=hadoop-local
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_CONF_dfs_datanode_data_dir=file:///hadoop/dfs/data
+    volumes:
+      - datanode-data:/hadoop/dfs/data
+      - ../logs/datanode:/opt/hadoop/logs
+      - ./hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./hadoop/yarn-site.xml:/opt/hadoop/etc/hadoop/yarn-site.xml
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "jps | grep DataNode"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+    networks:
+      - hadoop_net
+
+  historyserver:
+    image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
+    container_name: historyserver
+    hostname: historyserver
+    restart: unless-stopped
+    ports:
+      - "8188:8188"
+    environment:
+      - CLUSTER_NAME=hadoop-local
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+    depends_on:
+      namenode:
+        condition: service_healthy
+      datanode:
+        condition: service_started
+    volumes:
+      - history-data:/hadoop/yarn/timeline
+      - ../logs/history:/opt/hadoop/logs
+      - ./hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./hadoop/yarn-site.xml:/opt/hadoop/etc/hadoop/yarn-site.xml
+    networks:
+      - hadoop_net
+
+  pig:
+    build:
+      context: ./..
+      dockerfile: deploy/hadoop/Dockerfile
+    container_name: pig
+    hostname: pig
+    restart: unless-stopped
+    depends_on:
+      namenode:
+        condition: service_healthy
+      datanode:
+        condition: service_started
+    environment:
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+      - PIG_CONF_DIR=/opt/pig/conf
+    volumes:
+      - ../pig:/opt/pig/scripts
+      - ../logs/pig:/opt/pig/logs
+    command: ["sleep", "infinity"]
+    networks:
+      - hadoop_net
