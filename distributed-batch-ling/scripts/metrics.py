@@ -55,6 +55,9 @@ def parse_log(path: pathlib.Path) -> Optional[float]:
     return None
 
 
+HDFS_ENV = "PATH=$PATH:/opt/hadoop/bin:/opt/hadoop-3.2.1/bin"
+
+
 def hdfs_count_lines(compose_file: str, path: str, namenode: str = "namenode") -> int:
     cmd = [
         "docker",
@@ -66,7 +69,7 @@ def hdfs_count_lines(compose_file: str, path: str, namenode: str = "namenode") -
         namenode,
         "bash",
         "-lc",
-        f"hdfs dfs -cat {path}/* | wc -l"
+        f"{HDFS_ENV} hdfs dfs -cat {path}/* | wc -l"
     ]
     try:
         output = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
@@ -86,7 +89,7 @@ def hdfs_stats(compose_file: str, path: str, namenode: str = "namenode") -> Dict
         namenode,
         "bash",
         "-lc",
-        f"hdfs dfs -count -q {path}"
+        f"{HDFS_ENV} hdfs dfs -count -q {path}"
     ]
     try:
         output = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
