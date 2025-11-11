@@ -56,6 +56,16 @@ def parse_log(path: pathlib.Path) -> Optional[float]:
 
 
 HDFS_ENV = "PATH=$PATH:/opt/hadoop/bin:/opt/hadoop-3.2.1/bin"
+ENSURE_BASH = (
+    "if ! command -v bash >/dev/null 2>&1; then "
+    "if ! command -v apt-get >/dev/null 2>&1; then "
+    "echo >&2 'bash is required but apt-get is not available to install it'; exit 127; fi; "
+    "if [ -w /etc/apt/sources.list ]; then printf '%s\\n' "
+    "'deb http://archive.debian.org/debian stretch main' "
+    "'deb http://archive.debian.org/debian stretch contrib non-free' > /etc/apt/sources.list; "
+    "printf 'Acquire::Check-Valid-Until \"false\";\\nAcquire::AllowInsecureRepositories \"true\";\\n' > /etc/apt/apt.conf.d/99archive; fi; "
+    "apt-get update; apt-get install -y --no-install-recommends bash; rm -rf /var/lib/apt/lists/*; fi"
+)
 
 
 def hdfs_count_lines(compose_file: str, path: str, namenode: str = "namenode") -> int:
@@ -69,7 +79,7 @@ def hdfs_count_lines(compose_file: str, path: str, namenode: str = "namenode") -
         namenode,
         "sh",
         "-lc",
-        f"{HDFS_ENV} hdfs dfs -cat {path}/* | wc -l"
+        f"{ENSURE_BASH}; {HDFS_ENV} hdfs dfs -cat {path}/* | wc -l"
     ]
     try:
         output = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
@@ -89,7 +99,7 @@ def hdfs_stats(compose_file: str, path: str, namenode: str = "namenode") -> Dict
         namenode,
         "sh",
         "-lc",
-        f"{HDFS_ENV} hdfs dfs -count -q {path}"
+        f"{ENSURE_BASH}; {HDFS_ENV} hdfs dfs -count -q {path}"
     ]
     try:
         output = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
