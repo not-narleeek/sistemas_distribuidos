@@ -8,7 +8,7 @@ RUN set -eux; \
         > /etc/apt/sources.list; \
     printf 'Acquire::Check-Valid-Until "false";\nAcquire::AllowInsecureRepositories "true";\n' > /etc/apt/apt.conf.d/99archive; \
     apt-get update; \
-    apt-get install -y --no-install-recommends curl python2; \
+    apt-get install -y --no-install-recommends curl python; \
     curl -fsSL "https://downloads.apache.org/pig/pig-${PIG_VERSION}/pig-${PIG_VERSION}.tar.gz" -o /tmp/pig.tar.gz; \
     mkdir -p /opt; \
     tar -xzf /tmp/pig.tar.gz -C /opt; \
