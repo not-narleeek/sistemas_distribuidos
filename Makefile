@@ -2,7 +2,8 @@ COMPOSE := docker compose -f distributed-batch-ling/deploy/docker-compose.yml
 PIG_SCRIPTS := /opt/pig/scripts
 LOG_DIR := distributed-batch-ling/logs
 OUTPUT_DIR := distributed-batch-ling/ingestion/output
-HADOOP_PATH_EXPORT := PATH=$$PATH:/opt/hadoop/bin:/opt/hadoop-3.2.1/bin
+HADOOP_PATH := /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/hadoop/bin:/opt/hadoop-3.2.1/bin
+HADOOP_PATH_EXPORT := PATH=$(HADOOP_PATH)
 HDFS := $(HADOOP_PATH_EXPORT) hdfs
 
 .PHONY: up down ps logs ensure-bash hdfs-init load-data run-batch run-yahoo run-llm run-compare fetch metrics clean-logs

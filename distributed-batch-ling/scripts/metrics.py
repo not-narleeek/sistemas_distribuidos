@@ -55,7 +55,7 @@ def parse_log(path: pathlib.Path) -> Optional[float]:
     return None
 
 
-HDFS_ENV = "PATH=$PATH:/opt/hadoop/bin:/opt/hadoop-3.2.1/bin"
+HDFS_ENV = "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/hadoop/bin:/opt/hadoop-3.2.1/bin"
 ENSURE_BASH = (
     "if ! command -v bash >/dev/null 2>&1; then "
     "if ! command -v apt-get >/dev/null 2>&1; then "
