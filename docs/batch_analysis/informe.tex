@@ -1,0 +1,68 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\title{Análisis Batch de Respuestas Yahoo! vs. LLM\\\large Tarea 3 -- Sistemas Distribuidos}
+\author{Equipo de Desarrollo}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Introducción}
+Este informe documenta la canalización batch construida con Hadoop y Apache Pig para analizar las respuestas almacenadas por la plataforma. Se parte del dump generado por el servicio de almacenamiento (o la base de datos MongoDB) y se construyen artefactos estadísticos que permiten comparar vocabulario entre respuestas humanas y respuestas generadas por el LLM.
+
+\section{Arquitectura}
+La distribución containerizada se aloja en \texttt{distributed-batch-ling/deploy/docker-compose.yml}. Incluye cuatro servicios principales: NameNode, DataNode, HistoryServer y un contenedor Pig con las configuraciones de Hadoop montadas desde \texttt{deploy/hadoop/*.xml}. Los volúmenes persistentes mantienen los datos de HDFS y los logs se exportan a \texttt{distributed-batch-ling/logs/}.
+
+Para garantizar reproducibilidad se definieron objetivos en el \texttt{Makefile}:
+
+\begin{itemize}
+  \item \textbf{make up}: Construye la imagen personalizada de Pig y levanta el clúster Hadoop.
+  \item \textbf{make hdfs-init}: Crea directorios de entrada y salida en HDFS.
+  \item \textbf{make load-data}: Ejecuta \texttt{ingestion/exporter.py}, particiona las respuestas por origen y las publica en HDFS.
+  \item \textbf{make run-batch}: Lanza los tres scripts Pig en modo MapReduce y conserva los logs en disco.
+  \item \textbf{make fetch}: Recupera los resultados del análisis hacia \texttt{distributed-batch-ling/artifacts/}.
+  \item \textbf{make metrics}: Calcula métricas de duración, tamaño y throughput a partir de HDFS y los logs de Pig.
+\end{itemize}
+
+\section{Pre-procesamiento y scripts Pig}
+El proceso Pig aplica los siguientes pasos:
+
+\begin{enumerate}
+  \item \textbf{Tokenización}: división por separadores no alfabéticos mediante \texttt{TOKENIZE} y una UDF en Jython.
+  \item \textbf{Limpieza}: minúsculas, normalización de acentos y eliminación de puntuación con \texttt{text\_utils.Normalizer}.
+  \item \textbf{Filtrado}: remoción de stopwords en español, números y tokens de longitud menor a dos caracteres.
+  \item \textbf{Conteo}: agrupamiento y cálculo de frecuencias con \texttt{GROUP} + \texttt{COUNT}. Se genera también un Top-50 ordenado.
+\end{enumerate}
+
+El script \texttt{compare.pig} realiza un \emph{full outer join} sobre los conteos de Yahoo! y LLM, calcula la diferencia absoluta y el ratio de frecuencias, y exporta el resultado en CSV (
+\texttt{palabra,freq\_yahoo,freq\_llm,diff,ratio}).
+
+\section{Métricas y observabilidad}
+Los logs de Pig se almacenan en \texttt{distributed-batch-ling/logs/} y registran la duración de cada job. El script \texttt{scripts/metrics.py} combina estos tiempos con el tamaño de los archivos en HDFS para reportar throughput (registros/segundo) y tamaño de los artefactos. Además, \texttt{historyserver} expone la interfaz web de MapReduce para revisar ejecuciones pasadas.
+
+\section{Guía para la demostración en video}
+\begin{enumerate}
+  \item Mostrar el estado de los contenedores (`docker compose ps`).
+  \item Ejecutar `make load-data` y `make run-batch`, destacando los logs y métricas.
+  \item Navegar por los resultados en `distributed-batch-ling/artifacts/`.
+  \item Presentar gráficas (Top-50 y nube de palabras) generadas a partir de los CSV exportados.
+  \item Resumir hallazgos comparativos resaltando palabras con mayor diferencia positiva/negativa.
+\end{enumerate}
+
+\section{Trabajo futuro}
+Se sugiere integrar Apache Oozie o Airflow para calendarizar el batch, enriquecer el análisis con métricas de similitud semántica y automatizar la generación de dashboards.
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+\bibitem{hadoop} Apache Hadoop. \url{https://hadoop.apache.org/}.
+\bibitem{pig} Apache Pig. \url{https://pig.apache.org/}.
+\end{thebibliography}
+
+\end{document}
