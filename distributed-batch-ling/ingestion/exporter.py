@@ -10,6 +10,8 @@ import time
 from dataclasses import dataclass
 from typing import Iterable, Iterator, List, Optional
 
+HDFS_PATH_EXPORT = "PATH=$PATH:/opt/hadoop/bin:/opt/hadoop-3.2.1/bin"
+
 import pandas as pd
 
 try:
@@ -257,9 +259,9 @@ def push_to_hdfs(
             "exec",
             "-T",
             namenode_container,
-            "bash",
+            "sh",
             "-lc",
-            f"hdfs dfs -mkdir -p {hdfs_target} && hdfs dfs -put -f {tmp_path} {hdfs_target}",
+            f"{HDFS_PATH_EXPORT} hdfs dfs -mkdir -p {hdfs_target} && {HDFS_PATH_EXPORT} hdfs dfs -put -f {tmp_path} {hdfs_target}",
         ]
         if verbose:
             print("Running:", " ".join(exec_cmd))

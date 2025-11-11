@@ -67,7 +67,7 @@ def hdfs_count_lines(compose_file: str, path: str, namenode: str = "namenode") -
         "exec",
         "-T",
         namenode,
-        "bash",
+        "sh",
         "-lc",
         f"{HDFS_ENV} hdfs dfs -cat {path}/* | wc -l"
     ]
@@ -87,7 +87,7 @@ def hdfs_stats(compose_file: str, path: str, namenode: str = "namenode") -> Dict
         "exec",
         "-T",
         namenode,
-        "bash",
+        "sh",
         "-lc",
         f"{HDFS_ENV} hdfs dfs -count -q {path}"
     ]
