@@ -79,7 +79,7 @@ services:
         "--llm-topic", "llm_requests",
         "--validated-topic", "validated_responses",
         "--regeneration-topic", "regeneration_requests",
-        "--group-id", "cache-service",
+    "--group-id", "cache-service",
       ]
     depends_on:
       - kafka-init
@@ -94,7 +94,7 @@ services:
       SERVICE_NAME: traffic-generator
     command:
       [
-        "--total", "100",
+        "--total", "5000",
         "--distribution", "poisson",
         "--lambda", "1.5",
         "--mongo-uri", "mongodb://mongo:27017/",
