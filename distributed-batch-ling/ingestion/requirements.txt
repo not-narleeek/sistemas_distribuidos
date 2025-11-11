@@ -1,0 +1,2 @@
+pandas>=1.5
+pymongo>=4.4

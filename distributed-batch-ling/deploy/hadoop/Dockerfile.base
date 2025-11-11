@@ -1,0 +1,12 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+RUN set -eux; \
+    printf '%s\n' \
+        'deb http://archive.debian.org/debian stretch main' \
+        'deb http://archive.debian.org/debian stretch contrib non-free' \
+        > /etc/apt/sources.list; \
+    printf 'Acquire::Check-Valid-Until "false";\nAcquire::AllowInsecureRepositories "true";\n' > /etc/apt/apt.conf.d/99archive; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends bash; \
+    rm -rf /var/lib/apt/lists/*

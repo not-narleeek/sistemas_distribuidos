@@ -108,3 +108,52 @@ docs/architecture.puml        # Diagrama PlantUML
 - En máquinas Windows (Docker Desktop + WSL2) el arranque del JobManager puede tardar unos segundos adicionales; el servicio `flink-submit` espera ahora a que la API REST (`/jobs/overview`) responda antes de enviar el *job*, evitando errores transitorios como `Job ... not found` en los logs.
 
 Con esta infraestructura modular es posible analizar empíricamente el impacto de un modelo asíncrono en la latencia, throughput y calidad de las respuestas, cumpliendo los objetivos de la Tarea 2.
+
+## Análisis batch con Hadoop + Pig (Tarea 3)
+
+La carpeta `distributed-batch-ling/` incorpora una canalización batch para estudiar las respuestas históricas almacenadas en la base de datos del proyecto. El objetivo es comparar vocabulario y frecuencias entre respuestas humanas (Yahoo!) y respuestas generadas por el LLM.
+
+### Componentes principales
+
+| Componente | Rol |
+|------------|-----|
+| `ingestion/exporter.py` | Extrae respuestas desde un dump CSV/Parquet o desde MongoDB y las particiona por origen (`yahoo`, `llm`). |
+| `deploy/docker-compose.yml` | Levanta un clúster Hadoop mínimo (NameNode, DataNode, HistoryServer) y un contenedor Pig listo para ejecutar scripts MapReduce. |
+| `pig/*.pig` | Scripts Pig para tokenizar, limpiar, contar palabras y generar comparativos. |
+| `pig/udf/text_utils.py` | UDF en Jython que normaliza, elimina puntuación y filtra *stopwords* en español. |
+| `Makefile` | Expone comandos reproducibles para levantar el entorno, cargar datos, ejecutar los trabajos y recolectar artefactos. |
+
+### Flujo de ejecución
+
+1. **Arranque del clúster:** `make up` (construye la imagen de Pig y levanta los servicios sobre la red `hadoop_net`).
+2. **Inicializar HDFS:** `make hdfs-init` crea los directorios `/data/input/*` y `/data/output/*` dentro del NameNode.
+3. **Exportar e ingerir datos:**
+   ```bash
+   make load-data DUMP_PATH=data/muestras_respuestas.csv
+   ```
+   El *exporter* valida el esquema, separa respuestas por origen y ejecuta `hdfs dfs -put` para almacenarlas en HDFS.
+4. **Ejecutar Pig:** `make run-batch` corre `wordcount_yahoo.pig`, `wordcount_llm.pig` y `compare.pig`. Cada ejecución deja un log en `distributed-batch-ling/logs/`.
+5. **Recuperar resultados:** `make fetch` obtiene las salidas (`wordcount`, `top50`, `wordcount_diff`) y las copia a `distributed-batch-ling/artifacts/`.
+6. **Métricas:** `make metrics` resume duración, tamaño de entrada/salida y throughput de cada dataset usando las bitácoras y HDFS.
+
+Los scripts Pig aplican *tokenización*, normalización a minúsculas, eliminación de acentos/puntuación y filtrado de *stopwords*. Los resultados incluyen conteos completos y Top-50 por origen además de un CSV comparativo (`freq_yahoo`, `freq_llm`, `diff`, `ratio`).
+
+### Requisitos adicionales
+
+- Docker Engine ≥ 20.10, GNU Make y acceso a internet (descarga Pig 0.17.0 en la primera construcción).
+- Dataset con columnas `id_pregunta`, `respuesta_texto`, `origen`, `ts_creacion`. Ejemplos de uso se documentan en `docs/batch_analysis/informe.tex`.
+- Para exportar desde MongoDB usar:
+
+  ```bash
+  python distributed-batch-ling/ingestion/exporter.py \
+    --mongo-uri "mongodb://usuario:password@localhost:27017" \
+    --mongo-db respuestas \
+    --mongo-collection historico \
+    --output-dir distributed-batch-ling/ingestion/output
+  ```
+
+### Entregables
+
+- `docs/batch_analysis/informe.tex` detalla la arquitectura, metodología, tablas comparativas y ejemplos de visualizaciones (Top-50 y nube de palabras). Incluye una lista de chequeo para la elaboración del video demostrativo exigido por la guía.
+- `distributed-batch-ling/artifacts/` contiene los resultados extraídos de HDFS (se pobla tras ejecutar `make fetch`).
+- Los logs de Hadoop y Pig se persisten en `distributed-batch-ling/logs/`, facilitando trazabilidad y cálculo de métricas (duración total y throughput).
