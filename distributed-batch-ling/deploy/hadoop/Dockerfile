@@ -13,9 +13,9 @@ RUN set -eux; \
 ENV PIG_HOME=/opt/pig \
     PATH="$PATH:/opt/pig/bin"
 
-COPY core-site.xml /opt/hadoop/etc/hadoop/core-site.xml
-COPY hdfs-site.xml /opt/hadoop/etc/hadoop/hdfs-site.xml
-COPY yarn-site.xml /opt/hadoop/etc/hadoop/yarn-site.xml
+COPY deploy/hadoop/core-site.xml /opt/hadoop/etc/hadoop/core-site.xml
+COPY deploy/hadoop/hdfs-site.xml /opt/hadoop/etc/hadoop/hdfs-site.xml
+COPY deploy/hadoop/yarn-site.xml /opt/hadoop/etc/hadoop/yarn-site.xml
 
 WORKDIR /opt/pig/scripts
 CMD ["sleep", "infinity"]
