@@ -22,14 +22,14 @@ clean-logs:
 	rm -f $(LOG_DIR)/*.log $(LOG_DIR)/pig/*.log
 
 hdfs-init:
-	$(COMPOSE) exec -T namenode sh -lc "$(HDFS) dfs -mkdir -p /data/input/yahoo /data/input/llm /data/output/yahoo /data/output/llm /data/output/compare"
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -mkdir -p /data/input/yahoo /data/input/llm /data/output/yahoo /data/output/llm /data/output/compare"
 
 load-data: $(OUTPUT_DIR)/yahoo_respuestas.csv $(OUTPUT_DIR)/llm_respuestas.csv
 	$(COMPOSE) cp $(OUTPUT_DIR)/yahoo_respuestas.csv namenode:/tmp/yahoo_respuestas.csv
 	$(COMPOSE) cp $(OUTPUT_DIR)/llm_respuestas.csv namenode:/tmp/llm_respuestas.csv
-	$(COMPOSE) exec -T namenode sh -lc "$(HDFS) dfs -mkdir -p /data/input/yahoo /data/input/llm"
-	$(COMPOSE) exec -T namenode sh -lc "$(HDFS) dfs -put -f /tmp/yahoo_respuestas.csv /data/input/yahoo/"
-	$(COMPOSE) exec -T namenode sh -lc "$(HDFS) dfs -put -f /tmp/llm_respuestas.csv /data/input/llm/"
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -mkdir -p /data/input/yahoo /data/input/llm"
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -put -f /tmp/yahoo_respuestas.csv /data/input/yahoo/"
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -put -f /tmp/llm_respuestas.csv /data/input/llm/"
 
 $(OUTPUT_DIR)/yahoo_respuestas.csv $(OUTPUT_DIR)/llm_respuestas.csv:
 	@if [ -z "$(DUMP_PATH)" ]; then \
@@ -57,10 +57,10 @@ run-compare:
 
 fetch:
 	mkdir -p distributed-batch-ling/artifacts
-	$(COMPOSE) exec -T namenode sh -lc "rm -rf /tmp/batch-artifacts && mkdir -p /tmp/batch-artifacts && $(HDFS) dfs -get -f /data/output /tmp/batch-artifacts/"
+	$(COMPOSE) exec -T namenode sh -c "rm -rf /tmp/batch-artifacts && mkdir -p /tmp/batch-artifacts && $(HDFS) dfs -get -f /data/output /tmp/batch-artifacts/"
 	rm -rf distributed-batch-ling/artifacts/output
 	$(COMPOSE) cp namenode:/tmp/batch-artifacts/data/output distributed-batch-ling/artifacts
-	$(COMPOSE) exec -T namenode sh -lc "rm -rf /tmp/batch-artifacts"
+	$(COMPOSE) exec -T namenode sh -c "rm -rf /tmp/batch-artifacts"
 
 metrics:
 	python distributed-batch-ling/scripts/metrics.py --compose-file distributed-batch-ling/deploy/docker-compose.yml
