@@ -95,9 +95,29 @@ def hdfs_stats(compose_file: str, path: str, namenode: str = "namenode") -> Dict
         output = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError:
         return {"dirs": 0, "files": 0, "size": 0}
-    parts = output.strip().split()
+
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    if not lines:
+        return {"dirs": 0, "files": 0, "size": 0}
+
+    # docker compose exec may prepend warnings like "mesg: ttyname failed". Keep the
+    # last meaningful line, skipping any noise that does not resemble the expected
+    # quota output.
+    data_line = None
+    for line in reversed(lines):
+        lower = line.lower()
+        if lower.startswith("mesg:") or lower.startswith("warning:"):
+            continue
+        data_line = line
+        break
+
+    if data_line is None:
+        data_line = lines[-1]
+
+    parts = data_line.split()
     if len(parts) < 8:
         raise RuntimeError(f"Unexpected output from hdfs dfs -count: {output}")
+
     # Format: QUOTA REM_QUOTA SPACE_QUOTA REM_SPACE_QUOTA DIR_COUNT FILE_COUNT CONTENT_SIZE PATHNAME
     return {
         "dirs": int(parts[4]),
