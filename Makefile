@@ -71,11 +71,15 @@ run-compare:
 	@cp $(LOG_DIR)/pig/pig_compare.log $(LOG_DIR)/pig_compare.log
 
 fetch:
-	mkdir -p distributed-batch-ling/artifacts
-	$(COMPOSE) exec -T namenode sh -c "rm -rf /tmp/batch-artifacts && mkdir -p /tmp/batch-artifacts && $(HDFS) dfs -get -f /data/output /tmp/batch-artifacts/"
-	rm -rf distributed-batch-ling/artifacts/output
-	$(COMPOSE) cp namenode:/tmp/batch-artifacts/data/output distributed-batch-ling/artifacts
-	$(COMPOSE) exec -T namenode sh -c "rm -rf /tmp/batch-artifacts"
+        mkdir -p distributed-batch-ling/artifacts
+        $(COMPOSE) exec -T namenode sh -c "rm -rf /tmp/batch-artifacts && mkdir -p /tmp/batch-artifacts && if $(HDFS) dfs -test -e /data/output; then $(HDFS) dfs -get -f /data/output /tmp/batch-artifacts/; else echo 'No HDFS output found under /data/output'; fi"
+        rm -rf distributed-batch-ling/artifacts/output
+        @if $(COMPOSE) cp namenode:/tmp/batch-artifacts/output distributed-batch-ling/artifacts >/dev/null 2>&1; then \
+                echo "Fetched artifacts into distributed-batch-ling/artifacts/output"; \
+        else \
+                echo "No output artifacts were copied. Ensure the batch jobs completed successfully before running make fetch."; \
+        fi
+        $(COMPOSE) exec -T namenode sh -c "rm -rf /tmp/batch-artifacts"
 
 metrics:
 	python distributed-batch-ling/scripts/metrics.py --compose-file distributed-batch-ling/deploy/docker-compose.yml
