@@ -369,7 +369,25 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.input:
         input_path = pathlib.Path(args.input)
         if not input_path.exists():
-            raise SystemExit(f"Input file {input_path} not found")
+            if input_path.is_absolute():
+                project_root = pathlib.Path(__file__).resolve().parents[2]
+                try:
+                    fallback = project_root / input_path.relative_to("/")
+                except ValueError:
+                    fallback = project_root / input_path.name
+                if fallback.exists():
+                    input_path = fallback
+                else:
+                    raise SystemExit(
+                        f"Input file {input_path} not found (also checked {fallback})"
+                    )
+            else:
+                project_root = pathlib.Path(__file__).resolve().parents[2]
+                fallback = project_root / input_path
+                if fallback.exists():
+                    input_path = fallback
+                else:
+                    raise SystemExit(f"Input file {input_path} not found")
         suffix = input_path.suffix.lower()
         if suffix == ".csv":
             iterator = iter_records_from_csv(input_path, args.chunk_size)
