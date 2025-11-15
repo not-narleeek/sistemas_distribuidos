@@ -1,0 +1,8 @@
+{
+  "top_n": 50,
+  "yahoo_vocab": 4,
+  "llm_vocab": 0,
+  "top_overlap": 0,
+  "top_union": 4,
+  "top_jaccard": 0.0
+}
