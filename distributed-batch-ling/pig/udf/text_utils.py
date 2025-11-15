@@ -1,4 +1,11 @@
-# Jython UDFs for Pig token normalization.
+# -*- coding: utf-8 -*-
+"""Jython UDFs for Pig token normalization."""
+
+# Hadoop's Jython runner requires an explicit encoding declaration whenever
+# non-ASCII characters (like "ñ") appear in the file. Without this header the
+# traffic Pig jobs crash with `SyntaxError: Non-ASCII character ...` during
+# `REGISTER` time. Declaring UTF-8 keeps the implementation portable without
+# changing the existing logic.
 from __future__ import annotations
 
 import re
