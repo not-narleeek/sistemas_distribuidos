@@ -1,4 +1,5 @@
-REGISTER /opt/pig/udf/text_utils.py USING jython AS text_utils;
+%default UDF_BASE '/opt/pig/scripts/udf'
+REGISTER '$UDF_BASE/text_utils.py' USING jython AS text_utils;
 
 %default POLICY "unknown"
 %default DISTRIBUTION "unknown"
