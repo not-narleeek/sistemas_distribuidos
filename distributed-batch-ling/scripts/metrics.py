@@ -75,7 +75,19 @@ def hdfs_count_lines(compose_file: str, path: str, namenode: str = "namenode") -
         output = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError:
         return 0
-    return int(output.strip()) if output.strip() else 0
+
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    if not lines:
+        return 0
+
+    for line in reversed(lines):
+        if line.isdigit():
+            return int(line)
+
+    # Fall back to 0 if no numeric payload could be parsed. This prevents
+    # misleading stack traces when docker compose prepends warnings such as
+    # "mesg: ttyname failed" ahead of the actual counter value.
+    return 0
 
 
 def hdfs_stats(compose_file: str, path: str, namenode: str = "namenode") -> Dict[str, int]:
