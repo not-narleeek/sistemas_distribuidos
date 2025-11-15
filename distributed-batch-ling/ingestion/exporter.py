@@ -3,16 +3,15 @@ from __future__ import annotations
 
 import argparse
 import csv
+import datetime as dt
 import json
 import pathlib
 import sys
 import time
 from dataclasses import dataclass
-from typing import Iterable, Iterator, List, Optional
+from typing import Iterable, Iterator, List, MutableMapping, Optional
 
 HDFS_PATH_EXPORT = "PATH=$PATH:/opt/hadoop/bin:/opt/hadoop-3.2.1/bin"
-
-import pandas as pd
 
 try:
     from pymongo import MongoClient
@@ -22,6 +21,9 @@ except ImportError:  # pragma: no cover - optional dependency
 REQUIRED_COLUMNS = {"id_pregunta", "respuesta_texto", "origen", "ts_creacion"}
 VALID_ORIGINS = {"yahoo", "llm"}
 DEFAULT_CHUNK_SIZE = 10_000
+
+Record = MutableMapping[str, str]
+Chunk = List[Record]
 
 
 @dataclass
@@ -109,18 +111,54 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def iter_records_from_csv(path: pathlib.Path, chunk_size: int) -> Iterator[pd.DataFrame]:
-    reader = pd.read_csv(path, chunksize=chunk_size)
-    for chunk in reader:
-        yield chunk
+def _sniff_dialect(path: pathlib.Path) -> csv.Dialect:
+    try:
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            sample = handle.read(4096)
+            handle.seek(0)
+            return csv.Sniffer().sniff(sample, delimiters=",;|\t")
+    except (csv.Error, OSError):
+        return csv.get_dialect("excel")
 
 
-def iter_records_from_parquet(path: pathlib.Path) -> Iterator[pd.DataFrame]:
+def iter_records_from_csv(path: pathlib.Path, chunk_size: int) -> Iterator[Chunk]:
+    dialect = _sniff_dialect(path)
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle, dialect=dialect)
+        if reader.fieldnames is None:
+            raise ValidationError("Input CSV must include a header row with column names")
+
+        normalized_headers = [header.strip() for header in reader.fieldnames]
+        missing = REQUIRED_COLUMNS - set(normalized_headers)
+        if missing:
+            raise ValidationError(
+                "Input is missing required columns: " + ", ".join(sorted(missing))
+            )
+
+        batch: Chunk = []
+        for raw_row in reader:
+            row: Record = {key.strip(): (value or "") for key, value in raw_row.items()}
+            batch.append(row)
+            if len(batch) >= chunk_size:
+                yield batch
+                batch = []
+        if batch:
+            yield batch
+
+
+def iter_records_from_parquet(path: pathlib.Path) -> Iterator[Chunk]:
+    try:
+        import pandas as pd  # type: ignore
+    except ImportError as exc:  # pragma: no cover - optional dependency
+        raise RuntimeError(
+            "Reading Parquet files requires pandas to be installed."
+        ) from exc
+
     df = pd.read_parquet(path)
-    yield df
+    yield [dict(row) for row in df.to_dict(orient="records")]
 
 
-def iter_records_from_mongo(args: argparse.Namespace) -> Iterator[pd.DataFrame]:
+def iter_records_from_mongo(args: argparse.Namespace) -> Iterator[Chunk]:
     if MongoClient is None:
         raise RuntimeError("pymongo must be installed to export from MongoDB.")
     if not args.mongo_db or not args.mongo_collection:
@@ -129,38 +167,72 @@ def iter_records_from_mongo(args: argparse.Namespace) -> Iterator[pd.DataFrame]:
     client = MongoClient(args.mongo_uri)
     collection = client[args.mongo_db][args.mongo_collection]
     cursor = collection.find({}, projection={"_id": 0})
-    batch: List[dict] = []
+    batch: Chunk = []
     for document in cursor:
-        batch.append(document)
+        batch.append({key: str(value) if value is not None else "" for key, value in document.items()})
         if len(batch) >= args.chunk_size:
-            yield pd.DataFrame.from_records(batch)
+            yield batch
             batch = []
     if batch:
-        yield pd.DataFrame.from_records(batch)
+        yield batch
 
 
-def validate_chunk(chunk: pd.DataFrame) -> pd.DataFrame:
-    if chunk.empty:
+def _normalize_timestamp(raw_value: str) -> str:
+    raw_value = raw_value.strip()
+    if not raw_value:
+        return ""
+
+    candidates = [raw_value]
+    if raw_value.endswith("Z"):
+        candidates.append(raw_value[:-1])
+
+    for candidate in candidates:
+        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S"):
+            try:
+                parsed = dt.datetime.strptime(candidate, fmt)
+                return parsed.strftime("%Y-%m-%dT%H:%M:%S")
+            except ValueError:
+                continue
+        try:
+            parsed = dt.datetime.fromisoformat(candidate)
+            return parsed.strftime("%Y-%m-%dT%H:%M:%S")
+        except ValueError:
+            continue
+    return ""
+
+
+def validate_chunk(chunk: Chunk) -> Chunk:
+    if not chunk:
         return chunk
-    missing = REQUIRED_COLUMNS - set(chunk.columns)
+
+    missing = REQUIRED_COLUMNS - set(chunk[0].keys())
     if missing:
         raise ValidationError(f"Input is missing required columns: {', '.join(sorted(missing))}")
-    chunk = chunk.copy()
-    chunk = chunk.dropna(subset=["respuesta_texto", "origen"]).reset_index(drop=True)
-    chunk["origen"] = chunk["origen"].str.lower().str.strip()
-    invalid = chunk.loc[~chunk["origen"].isin(VALID_ORIGINS)]
-    if not invalid.empty:
+
+    cleaned: Chunk = []
+    invalid_origins: set[str] = set()
+    for row in chunk:
+        origin = str(row.get("origen", "")).strip().lower()
+        text = str(row.get("respuesta_texto", "")).strip()
+        if not text or not origin:
+            continue
+        if origin not in VALID_ORIGINS:
+            invalid_origins.add(origin)
+            continue
+        normalized: Record = {
+            "id_pregunta": str(row.get("id_pregunta", "")).strip(),
+            "respuesta_texto": _clean_text(text),
+            "origen": origin,
+            "ts_creacion": _normalize_timestamp(str(row.get("ts_creacion", ""))),
+        }
+        cleaned.append(normalized)
+
+    if invalid_origins:
         raise ValidationError(
-            "Found rows with invalid 'origen' values: "
-            + ", ".join(sorted(invalid["origen"].unique()))
+            "Found rows with invalid 'origen' values: " + ", ".join(sorted(invalid_origins))
         )
-    chunk["respuesta_texto"] = chunk["respuesta_texto"].fillna("")
-    chunk["ts_creacion"] = (
-        pd.to_datetime(chunk["ts_creacion"], errors="coerce")
-        .dt.strftime("%Y-%m-%dT%H:%M:%S")
-        .fillna("")
-    )
-    return chunk
+
+    return cleaned
 
 
 def _clean_text(value: str) -> str:
@@ -172,7 +244,7 @@ def _clean_text(value: str) -> str:
 
 
 def write_partitioned_outputs(
-    chunks: Iterable[pd.DataFrame],
+    chunks: Iterable[Chunk],
     output_dir: pathlib.Path,
     dry_run: bool = False,
     verbose: bool = False,
@@ -199,11 +271,11 @@ def write_partitioned_outputs(
 
     for chunk in chunks:
         chunk = validate_chunk(chunk)
-        if chunk.empty:
+        if not chunk:
             continue
         stats.total_records += len(chunk)
-        yahoo_rows = chunk[chunk["origen"] == "yahoo"].to_dict("records")
-        llm_rows = chunk[chunk["origen"] == "llm"].to_dict("records")
+        yahoo_rows = [row for row in chunk if row["origen"] == "yahoo"]
+        llm_rows = [row for row in chunk if row["origen"] == "llm"]
         stats.yahoo_records += len(yahoo_rows)
         stats.llm_records += len(llm_rows)
 
