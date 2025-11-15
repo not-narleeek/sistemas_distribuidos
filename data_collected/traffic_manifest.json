@@ -1,6 +1,6 @@
 {
   "schema": "traffic_manifest/v1",
-  "generated_at": "2025-11-15T22:15:17Z",
+  "generated_at": "2025-11-15T22:28:27Z",
   "base_dir": "data_collected/traffic",
   "count": 6,
   "runs": [
