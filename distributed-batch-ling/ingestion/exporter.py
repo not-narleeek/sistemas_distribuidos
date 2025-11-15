@@ -111,9 +111,12 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--input-schema",
-        choices=("responses", "traffic"),
-        default="responses",
-        help="Structure of the input dataset. Use 'traffic' for broker logs with timestamp/topic columns.",
+        choices=("auto", "responses", "traffic"),
+        default="auto",
+        help=(
+            "Structure of the input dataset. The default 'auto' mode inspects CSV headers and selects the "
+            "appropriate schema; use 'traffic' for broker logs or 'responses' for cleaned corpora."
+        ),
     )
     parser.add_argument(
         "--traffic-text-columns",
@@ -162,6 +165,16 @@ def _sniff_dialect(path: pathlib.Path) -> csv.Dialect:
             return csv.Sniffer().sniff(sample, delimiters=",;|\t")
     except (csv.Error, OSError):
         return csv.get_dialect("excel")
+
+
+def read_csv_headers(path: pathlib.Path) -> List[str]:
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.reader(handle)
+        try:
+            headers = next(reader)
+        except StopIteration:
+            return []
+    return [header.strip() for header in headers]
 
 
 def iter_records_from_csv(
@@ -268,6 +281,31 @@ def _parse_mapping(raw_value: Optional[str]) -> dict[str, str]:
             )
         mapping[key_norm] = value_norm
     return mapping
+
+
+def detect_schema_from_headers(
+    headers: List[str],
+    text_columns: List[str],
+    question_field: str,
+    timestamp_field: str,
+    topic_field: str,
+) -> str:
+    normalized = {header.strip().lower() for header in headers}
+    if not normalized:
+        raise ValidationError("Input CSV appears to be empty or missing a header row")
+
+    if {column.lower() for column in REQUIRED_COLUMNS}.issubset(normalized):
+        return "responses"
+
+    traffic_required = {question_field, timestamp_field, topic_field}
+    traffic_required.update(text_columns)
+    traffic_required_normalized = {column.strip().lower() for column in traffic_required if column.strip()}
+    if traffic_required_normalized and traffic_required_normalized.issubset(normalized):
+        return "traffic"
+
+    raise ValidationError(
+        "Unable to auto-detect schema from CSV headers. Provide --input-schema explicitly or adjust column names."
+    )
 
 
 class BaseSchemaAdapter:
@@ -392,9 +430,12 @@ class TrafficSchemaAdapter(BaseSchemaAdapter):
         return cleaned
 
 
-def build_adapter(args: argparse.Namespace) -> BaseSchemaAdapter:
-    if args.input_schema == "responses":
+def build_adapter(args: argparse.Namespace, schema: str) -> BaseSchemaAdapter:
+    if schema == "responses":
         return ResponsesSchemaAdapter()
+
+    if schema != "traffic":
+        raise ValidationError(f"Unsupported schema '{schema}' requested")
 
     text_columns = [column.strip() for column in args.traffic_text_columns.split(",")]
     origin_map = _parse_mapping(args.traffic_origin_map)
@@ -540,7 +581,8 @@ def push_to_hdfs(
 def main(argv: Optional[List[str]] = None) -> int:
     args = parse_args(argv)
 
-    adapter = build_adapter(args)
+    selected_schema = args.input_schema
+    adapter: Optional[BaseSchemaAdapter] = None
 
     if args.input:
         input_path = pathlib.Path(args.input)
@@ -566,17 +608,37 @@ def main(argv: Optional[List[str]] = None) -> int:
                     raise SystemExit(f"Input file {input_path} not found")
         suffix = input_path.suffix.lower()
         if suffix == ".csv":
+            headers = read_csv_headers(input_path)
+            text_columns = [column.strip() for column in args.traffic_text_columns.split(",") if column.strip()]
+            if selected_schema == "auto":
+                selected_schema = detect_schema_from_headers(
+                    headers,
+                    text_columns=text_columns,
+                    question_field=args.traffic_question_field,
+                    timestamp_field=args.traffic_timestamp_field,
+                    topic_field=args.traffic_topic_field,
+                )
+            adapter = build_adapter(args, selected_schema)
             iterator = iter_records_from_csv(
                 input_path,
                 args.chunk_size,
                 required_columns=adapter.required_source_columns,
             )
         elif suffix in {".parquet", ".pq"}:
+            if selected_schema == "auto":
+                selected_schema = "responses"
+            adapter = build_adapter(args, selected_schema)
             iterator = iter_records_from_parquet(input_path)
         else:
             raise SystemExit("Unsupported input format. Use CSV or Parquet.")
     else:
+        if selected_schema == "auto":
+            selected_schema = "responses"
+        adapter = build_adapter(args, selected_schema)
         iterator = iter_records_from_mongo(args)
+
+    if adapter is None:
+        adapter = build_adapter(args, selected_schema)
 
     output_dir = pathlib.Path(args.output_dir)
     stats = write_partitioned_outputs(

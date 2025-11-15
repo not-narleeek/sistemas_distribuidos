@@ -32,8 +32,8 @@ scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamañ
    - Comprueba que Python 3.10+ está disponible (se usa para los scripts auxiliares) con `python --version`.
 
 2. **Preparar el dataset de respuestas (o tráfico).**
-   - El modo por defecto del exportador espera un CSV o Parquet con al menos las columnas `id_pregunta`, `respuesta_texto`, `origen` (`yahoo` o `llm`) y `ts_creacion`.
-   - Si tu archivo proviene del monitoreo de colas (campos como `timestamp`, `operation`, `status`, `topic`), ejecuta el script con `--input-schema traffic`. Este modo mapea automáticamente `topic` → `origen` y genera un texto combinando `operation`, `status` y `topic`. Ajusta el comportamiento con `--traffic-text-columns`, `--traffic-origin-map` o `--traffic-origin-default` cuando sea necesario.
+   - En modo `auto` (valor por defecto), el exportador inspecciona las cabeceras del CSV y decide si usar el esquema de **respuestas** (`id_pregunta`, `respuesta_texto`, `origen`, `ts_creacion`) o el de **telemetría de colas** (`timestamp`, `operation`, `status`, `topic`, etc.).
+   - Si prefieres forzar un modo concreto, añade `--input-schema responses` o `--input-schema traffic`. En el modo *traffic* puedes ajustar el comportamiento con `--traffic-text-columns`, `--traffic-origin-map` o `--traffic-origin-default`.
    - En cualquier caso puedes validar el esquema rápidamente con:
 
      ```bash
@@ -68,7 +68,7 @@ scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamañ
    make load-data DUMP_PATH=/ruta/a/datos.csv
    ```
 
-   El `Makefile` invoca al exportador para particionar el dataset en `ingestion/output` y después los copia dentro del contenedor `namenode` para publicarlos en HDFS. Si trabajas con telemetría del broker en lugar de respuestas limpias, añade `SCHEMA=traffic` y (opcionalmente) los parámetros `TRAFFIC_TEXT_COLUMNS`, `TRAFFIC_ORIGIN_MAP`, etc., por ejemplo:
+   El `Makefile` invoca al exportador (que detecta automáticamente el esquema cuando no se especifica) para particionar el dataset en `ingestion/output` y después los copia dentro del contenedor `namenode` para publicarlos en HDFS. Si necesitas forzar manualmente el modo tráfico o personalizarlo, añade `SCHEMA=traffic` y (opcionalmente) los parámetros `TRAFFIC_TEXT_COLUMNS`, `TRAFFIC_ORIGIN_MAP`, etc., por ejemplo:
 
    ```bash
    make load-data DUMP_PATH=./data_collected/traffic/archivo.csv SCHEMA=traffic TRAFFIC_TEXT_COLUMNS=operation,status,topic
