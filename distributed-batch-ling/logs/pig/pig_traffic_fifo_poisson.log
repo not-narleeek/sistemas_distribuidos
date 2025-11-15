@@ -1,0 +1,14 @@
+WARNING: log4j.properties is not found. HADOOP_CONF_DIR may be incomplete.
+2025-11-15 21:50:00,233 INFO  [main] pig.ExecTypeProvider (ExecTypeProvider.java:selectExecType(41)) - Trying ExecType : LOCAL
+2025-11-15 21:50:00,236 INFO  [main] pig.ExecTypeProvider (ExecTypeProvider.java:selectExecType(41)) - Trying ExecType : MAPREDUCE
+2025-11-15 21:50:00,239 INFO  [main] pig.ExecTypeProvider (ExecTypeProvider.java:selectExecType(43)) - Picked MAPREDUCE as the ExecType
+2025-11-15 21:50:00,294 [main] INFO  org.apache.pig.Main - Apache Pig version 0.17.0 (r1797386) compiled Jun 02 2017, 15:41:58
+2025-11-15 21:50:00,294 [main] INFO  org.apache.pig.Main - Logging error messages to: /opt/pig-0.17.0/scripts/pig_1763243400281.log
+2025-11-15 21:50:00,545 [main] INFO  org.apache.pig.impl.util.Utils - Default bootup file /root/.pigbootup not found
+2025-11-15 21:50:00,618 [main] INFO  org.apache.hadoop.conf.Configuration.deprecation - mapred.job.tracker is deprecated. Instead, use mapreduce.jobtracker.address
+2025-11-15 21:50:00,618 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - Connecting to hadoop file system at: hdfs://namenode:8020
+2025-11-15 21:50:01,014 [main] INFO  org.apache.pig.PigServer - Pig Script ID for the session: PIG-traffic_analysis.pig-4b349170-aa5c-4017-b706-3faf33cbb945
+2025-11-15 21:50:01,014 [main] WARN  org.apache.pig.PigServer - ATS is disabled since yarn.timeline-service.enabled set to false
+2025-11-15 21:50:01,049 [main] ERROR org.apache.pig.tools.grunt.Grunt - ERROR 2997: Encountered IOException. File /opt/pig/udf/text_utils.py does not exist
+Details at logfile: /opt/pig-0.17.0/scripts/pig_1763243400281.log
+2025-11-15 21:50:01,079 [main] INFO  org.apache.pig.Main - Pig script completed in 883 milliseconds (883 ms)

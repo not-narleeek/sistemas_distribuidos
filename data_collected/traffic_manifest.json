@@ -1,0 +1,101 @@
+{
+  "schema": "traffic_manifest/v1",
+  "generated_at": "2025-11-15T21:49:06Z",
+  "base_dir": "data_collected/traffic",
+  "count": 6,
+  "runs": [
+    {
+      "policy": "fifo",
+      "distribution": "poisson",
+      "local_path": "data_collected/traffic/fifo-data/traffic_poisson_n5000_lambda1_5_20251029131638263553.csv",
+      "file_name": "traffic_poisson_n5000_lambda1_5_20251029131638263553.csv",
+      "size_bytes": 671520,
+      "n": 5000,
+      "low": null,
+      "high": null,
+      "run_id": "20251029131638263553",
+      "extra_tokens": [
+        "5"
+      ],
+      "lambda": 1.0
+    },
+    {
+      "policy": "fifo",
+      "distribution": "uniform",
+      "local_path": "data_collected/traffic/fifo-data/traffic_uniform_n5000_low0_1_high0_5_20251029142048841511.csv",
+      "file_name": "traffic_uniform_n5000_low0_1_high0_5_20251029142048841511.csv",
+      "size_bytes": 672547,
+      "n": 5000,
+      "low": 0.0,
+      "high": 0.0,
+      "run_id": "20251029142048841511",
+      "extra_tokens": [
+        "1",
+        "5"
+      ],
+      "lambda": null
+    },
+    {
+      "policy": "lfu",
+      "distribution": "poisson",
+      "local_path": "data_collected/traffic/lfu-data/traffic_poisson_n5000_lambda1_5_20251029003255365267.csv",
+      "file_name": "traffic_poisson_n5000_lambda1_5_20251029003255365267.csv",
+      "size_bytes": 671506,
+      "n": 5000,
+      "low": null,
+      "high": null,
+      "run_id": "20251029003255365267",
+      "extra_tokens": [
+        "5"
+      ],
+      "lambda": 1.0
+    },
+    {
+      "policy": "lfu",
+      "distribution": "uniform",
+      "local_path": "data_collected/traffic/lfu-data/traffic_uniform_n5000_low0_1_high0_5_20251029124026908069.csv",
+      "file_name": "traffic_uniform_n5000_low0_1_high0_5_20251029124026908069.csv",
+      "size_bytes": 672624,
+      "n": 5000,
+      "low": 0.0,
+      "high": 0.0,
+      "run_id": "20251029124026908069",
+      "extra_tokens": [
+        "1",
+        "5"
+      ],
+      "lambda": null
+    },
+    {
+      "policy": "lru",
+      "distribution": "poisson",
+      "local_path": "data_collected/traffic/lru-data/traffic_poisson_n5000_lambda1_5_20251028224013895355.csv",
+      "file_name": "traffic_poisson_n5000_lambda1_5_20251028224013895355.csv",
+      "size_bytes": 671530,
+      "n": 5000,
+      "low": null,
+      "high": null,
+      "run_id": "20251028224013895355",
+      "extra_tokens": [
+        "5"
+      ],
+      "lambda": 1.0
+    },
+    {
+      "policy": "lru",
+      "distribution": "uniform",
+      "local_path": "data_collected/traffic/lru-data/traffic_uniform_n5000_low0_1_high0_5_20251028235356821680.csv",
+      "file_name": "traffic_uniform_n5000_low0_1_high0_5_20251028235356821680.csv",
+      "size_bytes": 672593,
+      "n": 5000,
+      "low": 0.0,
+      "high": 0.0,
+      "run_id": "20251028235356821680",
+      "extra_tokens": [
+        "1",
+        "5"
+      ],
+      "lambda": null
+    }
+  ]
+}
