@@ -26,9 +26,6 @@ DEFAULT_TRAFFIC_TEXT_COLUMNS = ("operation", "status", "topic")
 Record = MutableMapping[str, str]
 Chunk = List[Record]
 
-Record = MutableMapping[str, str]
-Chunk = List[Record]
-
 
 @dataclass
 class ExportStats:
