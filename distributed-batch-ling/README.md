@@ -8,7 +8,7 @@ Este módulo contiene todos los artefactos necesarios para ejecutar la Tarea 3 d
 ingestion/                # Exportador desde CSV/Parquet o MongoDB hacia CSV particionados
 pig/                      # Scripts Pig + stopwords y UDFs Jython
 pig/udf/text_utils.py     # Normalización y filtrado de tokens
-pig/wordcount_*.pig       # Trabajos MapReduce para Yahoo y LLM
+pig/wordfreq.pig          # Trabajo MapReduce parametrizable (Yahoo / LLM)
 pig/compare.pig           # Comparativa de frecuencias
 deploy/docker-compose.yml # Clúster Hadoop (NameNode, DataNode, HistoryServer, Pig)
 deploy/hadoop/Dockerfile  # Imagen Pig con Pig 0.17 y configs montadas
@@ -24,29 +24,89 @@ scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamañ
 - Archivo CSV/Parquet o acceso a MongoDB con columnas: `id_pregunta`, `respuesta_texto`, `origen`, `ts_creacion`.
 - Conexión a Internet la primera vez (descarga Pig 0.17.0).
 
-## Flujo típico
+## Guía paso a paso
 
-```bash
-# 1) Levantar Hadoop + Pig
-make up
+1. **Validar dependencias del host.**
+   - Comprueba que Docker responde ejecutando `docker version`.
+   - Verifica que GNU Make funciona con `make --version`.
+   - Comprueba que Python 3.10+ está disponible (se usa para los scripts auxiliares) con `python --version`.
 
-# 2) Crear carpetas en HDFS
-make hdfs-init
+2. **Preparar el dataset de respuestas.**
+   - El exportador espera un CSV o Parquet con al menos las columnas `id_pregunta`, `respuesta_texto`, `origen` (`yahoo` o `llm`) y `ts_creacion`.
+   - Si tu archivo tiene otros nombres de columnas, normalízalos antes de ejecutar la ingesta. Como validación rápida puedes correr:
 
-# 3) Exportar e ingerir datos desde CSV
-make load-data DUMP_PATH=data/respuestas.csv
+     ```bash
+     python distributed-batch-ling/ingestion/exporter.py \
+       --input /ruta/a/datos.csv \
+       --output-dir distributed-batch-ling/ingestion/output \
+       --dry-run --verbose
+     ```
 
-# 4) Ejecutar análisis completo
-make run-batch
+     Esto revisa el esquema sin escribir archivos. Repite el paso tras ajustar los nombres/valores hasta que el proceso finalice sin errores.
 
-# 5) Traer resultados a ./distributed-batch-ling/artifacts
-make fetch
+3. **Construir y arrancar el clúster Hadoop + Pig.**
 
-# 6) Calcular métricas
-make metrics
-```
+   ```bash
+   make up
+   ```
 
-Los comandos `run-yahoo`, `run-llm` y `run-compare` también pueden invocarse de forma independiente.
+   El comando descarga/compila las imágenes necesarias y levanta los servicios definidos en `deploy/docker-compose.yml`. Puedes observar el estado con `make ps` y consultar logs con `make logs`.
+
+4. **Crear las rutas base en HDFS.**
+
+   ```bash
+   make hdfs-init
+   ```
+
+   Se ejecuta dentro del NameNode y garantiza que existan `/data/input/{yahoo,llm}` y `/data/output/{yahoo,llm}`.
+
+5. **Exportar datos y subirlos a HDFS.**
+
+   ```bash
+   make load-data DUMP_PATH=/ruta/a/datos.csv
+   ```
+
+   El `Makefile` invoca al exportador para particionar el dataset en `ingestion/output` y después los copia dentro del contenedor `namenode` para publicarlos en HDFS. Si necesitas controlar el proceso manualmente, puedes ejecutar primero el script `exporter.py` y luego `make hdfs-put`.
+
+6. **Ejecutar los jobs de Pig.**
+
+   ```bash
+   make run-batch
+   ```
+
+   Este target lanza `wordfreq.pig` para Yahoo y LLM, además del comparador. Para ejecuciones individuales existen `make run-yahoo`, `make run-llm` y `make run-compare`.
+
+7. **Descargar los resultados al host.**
+
+   ```bash
+   make fetch
+   ```
+
+   Los artefactos quedarán en `artifacts/output/` replicando la estructura de HDFS.
+
+8. **Generar tablas, Top-N y visualizaciones opcionales.**
+
+   ```bash
+   make compare CHART=1
+   ```
+
+   El script `scripts/compare_topn.py` toma los TSV descargados y produce CSV/PNG para incluir en el informe. Omite `CHART=1` si sólo necesitas tablas.
+
+9. **Calcular métricas agregadas.**
+
+   ```bash
+   make metrics
+   ```
+
+   Esto resume el tamaño de los corpus, el número de tokens y la duración de los jobs leyendo los logs almacenados.
+
+10. **Apagar el entorno cuando termines.**
+
+    ```bash
+    make down
+    ```
+
+    Usa `make clean-logs` y `make clean-artifacts` para limpiar resultados previos antes de una nueva corrida.
 
 ## Exportación desde MongoDB
 
@@ -59,6 +119,7 @@ python distributed-batch-ling/ingestion/exporter.py \
   --verbose
 ```
 
+El exportador genera tanto CSVs con metadatos (`*_respuestas.csv`) como corpus de texto plano (`*_respuestas.txt`) listos para cargarse en HDFS.
 Para subir automáticamente a HDFS tras la exportación añade `--hdfs-base /data/input --compose-file distributed-batch-ling/deploy/docker-compose.yml`.
 
 ## Observabilidad y métricas
