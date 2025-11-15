@@ -59,8 +59,9 @@ scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamañ
    make hdfs-init
    ```
 
-   Se ejecuta dentro del NameNode, garantiza que existan `/data/input/{yahoo,llm}` y `/data/output/{yahoo,llm}` y publica
-   `stopwords_es.txt` en `/data/resources/stopwords_es.txt` dentro de HDFS para que los nodos de MapReduce puedan leerlo.
+   Se ejecuta dentro del NameNode, espera a que HDFS salga de *safe mode*, garantiza que existan `/data/input/{yahoo,llm}` y
+   `/data/output/{yahoo,llm}` y publica `stopwords_es.txt` en `/data/resources/stopwords_es.txt` dentro de HDFS para que los
+   nodos de MapReduce puedan leerlo.
 
 5. **Exportar datos y subirlos a HDFS.**
 

@@ -22,6 +22,7 @@ clean-logs:
 	rm -f $(LOG_DIR)/*.log $(LOG_DIR)/pig/*.log
 
 hdfs-init:
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfsadmin -safemode wait"
 	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -mkdir -p /data/input/yahoo /data/input/llm /data/output/yahoo /data/output/llm /data/output/compare /data/resources"
 	$(COMPOSE) cp distributed-batch-ling/pig/stopwords_es.txt namenode:/tmp/stopwords_es.txt
 	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -put -f /tmp/stopwords_es.txt /data/resources/ && rm -f /tmp/stopwords_es.txt"
