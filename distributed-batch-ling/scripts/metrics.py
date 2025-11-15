@@ -110,12 +110,12 @@ def calculate_metrics(compose_file: str) -> Iterable[JobMetrics]:
     datasets = {
         "yahoo": {
             "input": "/data/input/yahoo",
-            "output": "/data/output/yahoo/wordcount",
+            "output": "/data/output/yahoo/full",
             "log": DEFAULT_LOGS["yahoo"],
         },
         "llm": {
             "input": "/data/input/llm",
-            "output": "/data/output/llm/wordcount",
+            "output": "/data/output/llm/full",
             "log": DEFAULT_LOGS["llm"],
         },
     }
@@ -126,8 +126,7 @@ def calculate_metrics(compose_file: str) -> Iterable[JobMetrics]:
         output_stats = hdfs_stats(compose_file, conf["output"])
         input_lines = hdfs_count_lines(compose_file, conf["input"])
         output_lines = hdfs_count_lines(compose_file, conf["output"])
-        # discount headers if present
-        input_records = max(input_lines - 1, 0)
+        input_records = max(input_lines, 0)
         output_records = max(output_lines, 0)
         yield JobMetrics(
             dataset=name,
