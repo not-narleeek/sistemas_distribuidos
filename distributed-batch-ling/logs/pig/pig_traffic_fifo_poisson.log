@@ -1,0 +1,18 @@
+WARNING: log4j.properties is not found. HADOOP_CONF_DIR may be incomplete.
+2025-11-15 22:15:52,190 INFO  [main] pig.ExecTypeProvider (ExecTypeProvider.java:selectExecType(41)) - Trying ExecType : LOCAL
+2025-11-15 22:15:52,192 INFO  [main] pig.ExecTypeProvider (ExecTypeProvider.java:selectExecType(41)) - Trying ExecType : MAPREDUCE
+2025-11-15 22:15:52,193 INFO  [main] pig.ExecTypeProvider (ExecTypeProvider.java:selectExecType(43)) - Picked MAPREDUCE as the ExecType
+2025-11-15 22:15:52,234 [main] INFO  org.apache.pig.Main - Apache Pig version 0.17.0 (r1797386) compiled Jun 02 2017, 15:41:58
+2025-11-15 22:15:52,234 [main] INFO  org.apache.pig.Main - Logging error messages to: /opt/pig-0.17.0/scripts/pig_1763244952225.log
+2025-11-15 22:15:52,435 [main] INFO  org.apache.pig.impl.util.Utils - Default bootup file /root/.pigbootup not found
+2025-11-15 22:15:52,500 [main] INFO  org.apache.hadoop.conf.Configuration.deprecation - mapred.job.tracker is deprecated. Instead, use mapreduce.jobtracker.address
+2025-11-15 22:15:52,500 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - Connecting to hadoop file system at: hdfs://namenode:8020
+2025-11-15 22:15:52,802 [main] INFO  org.apache.pig.PigServer - Pig Script ID for the session: PIG-traffic_analysis.pig-95a855ad-b11c-418b-9e5b-bfb190631623
+2025-11-15 22:15:52,802 [main] WARN  org.apache.pig.PigServer - ATS is disabled since yarn.timeline-service.enabled set to false
+2025-11-15 22:15:52,839 [main] INFO  org.apache.pig.scripting.jython.JythonScriptEngine - created tmp python.cachedir=/tmp/pig_jython_7477091140127985601
+2025-11-15 22:15:54,951 [main] WARN  org.apache.pig.scripting.jython.JythonScriptEngine - pig.cmd.args.remainders is empty. This is not expected unless on testing.
+2025-11-15 22:15:54,963 [main] ERROR org.apache.pig.tools.grunt.Grunt - ERROR 1121: Python Error.   File "/opt/pig-0.17.0/scripts/udf/text_utils.py", line 9
+SyntaxError: future feature annotations is not defined
+
+Details at logfile: /opt/pig-0.17.0/scripts/pig_1763244952225.log
+2025-11-15 22:15:54,989 [main] INFO  org.apache.pig.Main - Pig script completed in 2 seconds and 818 milliseconds (2818 ms)
