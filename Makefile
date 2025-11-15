@@ -89,7 +89,7 @@ metrics:
 	python distributed-batch-ling/scripts/metrics.py --compose-file distributed-batch-ling/deploy/docker-compose.yml
 
 compare:
-        python distributed-batch-ling/scripts/compare_topn.py --input-dir distributed-batch-ling/artifacts/output --output-dir distributed-batch-ling/artifacts $(if $(TOPN),--top-n $(TOPN),) $(if $(CHART),--chart,)
+	python distributed-batch-ling/scripts/compare_topn.py --input-dir distributed-batch-ling/artifacts/output --output-dir distributed-batch-ling/artifacts $(if $(TOPN),--top-n $(TOPN),) $(if $(CHART),--chart,)
 
 discover-traffic:
 	python distributed-batch-ling/scripts/discover_traffic_runs.py --output $(TRAFFIC_MANIFEST) $(if $(BASE_DIR),--base-dir $(BASE_DIR),) $(if $(FORMAT),--format $(FORMAT),)
