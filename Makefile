@@ -3,8 +3,12 @@ PIG_SCRIPTS := /opt/pig/scripts
 LOG_DIR := distributed-batch-ling/logs
 OUTPUT_DIR := distributed-batch-ling/ingestion/output
 HDFS := /opt/hdfs_exec.sh
+TRAFFIC_MANIFEST ?= data_collected/traffic_manifest.json
+TRAFFIC_NORMALIZED_DIR ?= data_normalized/traffic
+TRAFFIC_ARTIFACT_DIR ?= distributed-batch-ling/artifacts/traffic
 
-.PHONY: up down ps logs hdfs-init load-data run-batch run-yahoo run-llm run-compare fetch metrics clean-logs compare
+.PHONY: up down ps logs hdfs-init load-data run-batch run-yahoo run-llm run-compare fetch metrics clean-logs compare \
+discover-traffic normalize-traffic hdfs-put-traffic traffic-analysis fetch-traffic compare-traffic traffic-pipeline
 
 up:
 	$(COMPOSE) up -d --build
@@ -85,4 +89,24 @@ metrics:
 	python distributed-batch-ling/scripts/metrics.py --compose-file distributed-batch-ling/deploy/docker-compose.yml
 
 compare:
-	python distributed-batch-ling/scripts/compare_topn.py --input-dir distributed-batch-ling/artifacts/output --output-dir distributed-batch-ling/artifacts $(if $(TOPN),--top-n $(TOPN),) $(if $(CHART),--chart,)
+        python distributed-batch-ling/scripts/compare_topn.py --input-dir distributed-batch-ling/artifacts/output --output-dir distributed-batch-ling/artifacts $(if $(TOPN),--top-n $(TOPN),) $(if $(CHART),--chart,)
+
+discover-traffic:
+	python distributed-batch-ling/scripts/discover_traffic_runs.py --output $(TRAFFIC_MANIFEST) $(if $(BASE_DIR),--base-dir $(BASE_DIR),) $(if $(FORMAT),--format $(FORMAT),)
+
+normalize-traffic:
+	python distributed-batch-ling/scripts/normalize_traffic_csv.py --manifest $(TRAFFIC_MANIFEST) --output-dir $(TRAFFIC_NORMALIZED_DIR) $(if $(OVERWRITE),--overwrite,)
+
+hdfs-put-traffic:
+	python distributed-batch-ling/scripts/hdfs_put_traffic.py --manifest $(TRAFFIC_MANIFEST) --normalized-dir $(TRAFFIC_NORMALIZED_DIR) --compose-file distributed-batch-ling/deploy/docker-compose.yml
+
+traffic-analysis:
+	python distributed-batch-ling/scripts/run_traffic_analysis.py --manifest $(TRAFFIC_MANIFEST) --compose-file distributed-batch-ling/deploy/docker-compose.yml
+
+fetch-traffic:
+	python distributed-batch-ling/scripts/fetch_traffic_results.py --manifest $(TRAFFIC_MANIFEST) --compose-file distributed-batch-ling/deploy/docker-compose.yml --output-dir $(TRAFFIC_ARTIFACT_DIR)
+
+compare-traffic:
+	python distributed-batch-ling/scripts/compare_policies_distributions.py --input-dir $(TRAFFIC_ARTIFACT_DIR) --output $(TRAFFIC_ARTIFACT_DIR)/summary_global_policies_distributions.tsv
+
+traffic-pipeline: discover-traffic normalize-traffic hdfs-put-traffic traffic-analysis fetch-traffic compare-traffic

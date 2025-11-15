@@ -15,6 +15,13 @@ deploy/hadoop/Dockerfile  # Imagen Pig con Pig 0.17 y configs montadas
 artifacts/                # Resultados traídos desde HDFS (poblado con `make fetch`)
 logs/                     # Logs de Pig y Hadoop montados como volumen
 scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamaños)
+scripts/discover_traffic_runs.py # Manifest con runs FIFO/LFU/LRU
+scripts/normalize_traffic_csv.py # Normalización y esquema canónico para Pig
+scripts/hdfs_put_traffic.py # Publica datasets normalizados en HDFS
+scripts/run_traffic_analysis.py # Orquesta Pig traffic_analysis.pig por combinación
+scripts/fetch_traffic_results.py # Copia resultados de HDFS al host
+scripts/compare_policies_distributions.py # Resumen comparativo de políticas/distribuciones
+pig/traffic_analysis.pig   # Pig Latin para métricas por política/distribución
 ```
 
 ## Prerrequisitos
@@ -105,9 +112,9 @@ scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamañ
 
 9. **Calcular métricas agregadas.**
 
-   ```bash
-   make metrics
-   ```
+    ```bash
+    make metrics
+    ```
 
    Esto resume el tamaño de los corpus, el número de tokens y la duración de los jobs leyendo los logs almacenados.
 
@@ -118,6 +125,86 @@ scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamañ
     ```
 
     Usa `make clean-logs` y `make clean-artifacts` para limpiar resultados previos antes de una nueva corrida.
+
+## Flujo de análisis de tráfico (políticas FIFO/LFU/LRU)
+
+El dataset `data_collected/traffic` se recorre automáticamente para producir un manifest de corridas, normalizarlas y ejecutar Pig por cada combinación `(policy, distribution)`. Los archivos resultantes siguen la convención `stats_global_<policy>_<distribution>.tsv` para facilitar el informe.
+
+1. **Descubrir corridas disponibles.**
+
+   ```bash
+   make discover-traffic [BASE_DIR=data_collected/traffic]
+   ```
+
+   - Genera `data_collected/traffic_manifest.json` con metadatos (`policy`, `distribution`, `n`, `lambda`, etc.).
+   - Usa `FORMAT=csv` si quieres inspeccionar el manifest en una hoja de cálculo.
+
+2. **Normalizar CSV crudos.**
+
+   ```bash
+   make normalize-traffic [OVERWRITE=1]
+   ```
+
+   - Combina todos los runs por `policy`+`distribution` en `data_normalized/traffic/<policy>/<distribution>/traffic_<policy>_<distribution>.csv`.
+   - El esquema canónico es:
+
+     | Campo | Descripción |
+     | --- | --- |
+     | `timestamp_iso` | Marca de tiempo original en ISO 8601. |
+     | `operation` | Operación registrada (PUBLISH, HIT, etc.). |
+     | `message_id` / `question_id` | Identificadores asociados a cada solicitud. |
+     | `status` | Estado derivado de la cola o caché. |
+     | `latency_seconds` | Latencia normalizada a segundos (admite separador `,` o `.`). |
+     | `topic` | Cola o bucket que recibió la operación. |
+     | `policy`, `distribution` | Etiquetas persistidas por fila para no perder contexto. |
+     | `is_hit`, `was_evicted` | Señales binarias inferidas del `status` para calcular *hit ratio* y evicciones. |
+
+3. **Publicar datasets en HDFS.**
+
+   ```bash
+   make hdfs-put-traffic
+   ```
+
+   - Copia cada `traffic_<policy>_<distribution>.csv` al NameNode y lo sube a rutas como:
+     - `/data/in/traffic/fifo/poisson/traffic_fifo_poisson.csv`
+     - `/data/in/traffic/lru/uniform/traffic_lru_uniform.csv`
+
+4. **Ejecutar Pig para todas las combinaciones.**
+
+   ```bash
+   make traffic-analysis
+   ```
+
+   - `scripts/run_traffic_analysis.py` recorre el manifest, limpia `/data/out/traffic/<policy>/<distribution>` y lanza
+     `pig/traffic_analysis.pig` con los parámetros adecuados.
+   - Cada corrida produce tres directorios en HDFS: `stats_global_*`, `stats_by_topic_*` y `stats_by_status_*`.
+
+5. **Traer resultados locales.**
+
+   ```bash
+   make fetch-traffic
+   ```
+
+   - Copia a `distributed-batch-ling/artifacts/traffic/` los TSV nombrados como
+     `stats_global_<policy>_<distribution>.tsv`, etc.
+
+6. **Generar un resumen comparativo.**
+
+   ```bash
+   make compare-traffic
+   ```
+
+   - El script `scripts/compare_policies_distributions.py` agrega los TSV globales y genera
+     `summary_global_policies_distributions.tsv` listo para el informe.
+
+7. **Pipeline completo en un solo comando.**
+
+   ```bash
+   make traffic-pipeline
+   ```
+
+   Ejecuta todos los pasos anteriores (descubrimiento → normalización → carga → Pig → fetch → resumen) y deja los artefactos en
+   `distributed-batch-ling/artifacts/traffic/`.
 
 ## Exportación desde MongoDB
 
