@@ -1,0 +1,18 @@
+WARNING: log4j.properties is not found. HADOOP_CONF_DIR may be incomplete.
+2025-11-15 16:31:18,634 INFO  [main] pig.ExecTypeProvider (ExecTypeProvider.java:selectExecType(41)) - Trying ExecType : LOCAL
+2025-11-15 16:31:18,636 INFO  [main] pig.ExecTypeProvider (ExecTypeProvider.java:selectExecType(41)) - Trying ExecType : MAPREDUCE
+2025-11-15 16:31:18,640 INFO  [main] pig.ExecTypeProvider (ExecTypeProvider.java:selectExecType(43)) - Picked MAPREDUCE as the ExecType
+2025-11-15 16:31:18,689 [main] INFO  org.apache.pig.Main - Apache Pig version 0.17.0 (r1797386) compiled Jun 02 2017, 15:41:58
+2025-11-15 16:31:18,689 [main] INFO  org.apache.pig.Main - Logging error messages to: /opt/pig-0.17.0/scripts/pig_1763224278677.log
+2025-11-15 16:31:18,952 [main] INFO  org.apache.pig.impl.util.Utils - Default bootup file /root/.pigbootup not found
+2025-11-15 16:31:19,023 [main] INFO  org.apache.hadoop.conf.Configuration.deprecation - mapred.job.tracker is deprecated. Instead, use mapreduce.jobtracker.address
+2025-11-15 16:31:19,023 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - Connecting to hadoop file system at: hdfs://namenode:8020
+2025-11-15 16:31:19,446 [main] INFO  org.apache.pig.PigServer - Pig Script ID for the session: PIG-wordfreq.pig-576b0369-ae8c-4281-8a01-4e04229c8f44
+2025-11-15 16:31:19,446 [main] WARN  org.apache.pig.PigServer - ATS is disabled since yarn.timeline-service.enabled set to false
+2025-11-15 16:31:19,977 [main] INFO  org.apache.pig.impl.util.SpillableMemoryManager - Selected heap (PS Old Gen) of size 699400192 to monitor. collectionUsageThreshold = 489580128, usageThreshold = 489580128
+2025-11-15 16:31:20,078 [main] WARN  org.apache.pig.newplan.BaseOperatorPlan - Encountered Warning IMPLICIT_CAST_TO_LONG 1 time(s).
+2025-11-15 16:31:20,087 [main] INFO  org.apache.hadoop.conf.Configuration.deprecation - mapred.textoutputformat.separator is deprecated. Instead, use mapreduce.output.textoutputformat.separator
+2025-11-15 16:31:20,109 [main] ERROR org.apache.pig.tools.grunt.Grunt - ERROR 6000: <file /opt/pig/scripts/wordfreq.pig, line 18, column 0> Output Location Validation Failed for: '/data/output/yahoo/full More info to follow:
+Output directory hdfs://namenode:8020/data/output/yahoo/full already exists
+Details at logfile: /opt/pig-0.17.0/scripts/pig_1763224278677.log
+2025-11-15 16:31:20,132 [main] INFO  org.apache.pig.Main - Pig script completed in 1 second and 530 milliseconds (1530 ms)
