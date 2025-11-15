@@ -35,7 +35,7 @@ python --version
    ```
 6. Genera tablas/Top-N opcionales:
    ```bash
-   make compare [CHART=1]
+   make compare CHART=1   # omite CHART=1 si no quieres gráficos
    ```
 7. Calcula métricas agregadas:
    ```bash
@@ -50,11 +50,11 @@ python --version
 
 1. Descubre archivos disponibles y crea el manifest:
    ```bash
-   make discover-traffic [BASE_DIR=data_collected/traffic]
+   make discover-traffic BASE_DIR=data_collected/traffic   # el parámetro es opcional
    ```
 2. Normaliza los CSV crudos:
    ```bash
-   make normalize-traffic [OVERWRITE=1]
+   make normalize-traffic OVERWRITE=1   # quita OVERWRITE=1 para conservar archivos existentes
    ```
 3. Publica los datasets normalizados en HDFS:
    ```bash
