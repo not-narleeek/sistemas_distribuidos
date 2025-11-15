@@ -95,9 +95,29 @@ def hdfs_stats(compose_file: str, path: str, namenode: str = "namenode") -> Dict
         output = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError:
         return {"dirs": 0, "files": 0, "size": 0}
-    parts = output.strip().split()
+
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    if not lines:
+        return {"dirs": 0, "files": 0, "size": 0}
+
+    # docker compose exec may prepend warnings like "mesg: ttyname failed". Keep the
+    # last meaningful line, skipping any noise that does not resemble the expected
+    # quota output.
+    data_line = None
+    for line in reversed(lines):
+        lower = line.lower()
+        if lower.startswith("mesg:") or lower.startswith("warning:"):
+            continue
+        data_line = line
+        break
+
+    if data_line is None:
+        data_line = lines[-1]
+
+    parts = data_line.split()
     if len(parts) < 8:
         raise RuntimeError(f"Unexpected output from hdfs dfs -count: {output}")
+
     # Format: QUOTA REM_QUOTA SPACE_QUOTA REM_SPACE_QUOTA DIR_COUNT FILE_COUNT CONTENT_SIZE PATHNAME
     return {
         "dirs": int(parts[4]),
@@ -110,12 +130,12 @@ def calculate_metrics(compose_file: str) -> Iterable[JobMetrics]:
     datasets = {
         "yahoo": {
             "input": "/data/input/yahoo",
-            "output": "/data/output/yahoo/wordcount",
+            "output": "/data/output/yahoo/full",
             "log": DEFAULT_LOGS["yahoo"],
         },
         "llm": {
             "input": "/data/input/llm",
-            "output": "/data/output/llm/wordcount",
+            "output": "/data/output/llm/full",
             "log": DEFAULT_LOGS["llm"],
         },
     }
@@ -126,8 +146,7 @@ def calculate_metrics(compose_file: str) -> Iterable[JobMetrics]:
         output_stats = hdfs_stats(compose_file, conf["output"])
         input_lines = hdfs_count_lines(compose_file, conf["input"])
         output_lines = hdfs_count_lines(compose_file, conf["output"])
-        # discount headers if present
-        input_records = max(input_lines - 1, 0)
+        input_records = max(input_lines, 0)
         output_records = max(output_lines, 0)
         yield JobMetrics(
             dataset=name,
