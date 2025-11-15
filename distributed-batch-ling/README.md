@@ -59,7 +59,8 @@ scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamañ
    make hdfs-init
    ```
 
-   Se ejecuta dentro del NameNode y garantiza que existan `/data/input/{yahoo,llm}` y `/data/output/{yahoo,llm}`.
+   Se ejecuta dentro del NameNode, garantiza que existan `/data/input/{yahoo,llm}` y `/data/output/{yahoo,llm}` y publica
+   `stopwords_es.txt` en `/data/resources/stopwords_es.txt` dentro de HDFS para que los nodos de MapReduce puedan leerlo.
 
 5. **Exportar datos y subirlos a HDFS.**
 
@@ -67,7 +68,13 @@ scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamañ
    make load-data DUMP_PATH=/ruta/a/datos.csv
    ```
 
-   El `Makefile` invoca al exportador para particionar el dataset en `ingestion/output` y después los copia dentro del contenedor `namenode` para publicarlos en HDFS. Si necesitas controlar el proceso manualmente, puedes ejecutar primero el script `exporter.py` y luego `make hdfs-put`.
+   El `Makefile` invoca al exportador para particionar el dataset en `ingestion/output` y después los copia dentro del contenedor `namenode` para publicarlos en HDFS. Si trabajas con telemetría del broker en lugar de respuestas limpias, añade `SCHEMA=traffic` y (opcionalmente) los parámetros `TRAFFIC_TEXT_COLUMNS`, `TRAFFIC_ORIGIN_MAP`, etc., por ejemplo:
+
+   ```bash
+   make load-data DUMP_PATH=./data_collected/traffic/archivo.csv SCHEMA=traffic TRAFFIC_TEXT_COLUMNS=operation,status,topic
+   ```
+
+   Si necesitas controlar el proceso manualmente, puedes ejecutar primero el script `exporter.py` y luego `make hdfs-put`.
 
 6. **Ejecutar los jobs de Pig.**
 

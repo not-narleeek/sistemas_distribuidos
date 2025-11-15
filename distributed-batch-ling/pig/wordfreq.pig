@@ -1,6 +1,6 @@
 %default INPUT '/data/input/yahoo/yahoo_respuestas.txt'
 %default OUTPUT '/data/output/yahoo'
-%default STOPWORDS '/opt/pig/scripts/stopwords_es.txt'
+%default STOPWORDS '/data/resources/stopwords_es.txt'
 %default TOPN '50'
 
 RAW = LOAD '$INPUT' USING TextLoader() AS (line:chararray);
