@@ -3,8 +3,12 @@ PIG_SCRIPTS := /opt/pig/scripts
 LOG_DIR := distributed-batch-ling/logs
 OUTPUT_DIR := distributed-batch-ling/ingestion/output
 HDFS := /opt/hdfs_exec.sh
+TRAFFIC_MANIFEST ?= data_collected/traffic_manifest.json
+TRAFFIC_NORMALIZED_DIR ?= data_normalized/traffic
+TRAFFIC_ARTIFACT_DIR ?= distributed-batch-ling/artifacts/traffic
 
-.PHONY: up down ps logs hdfs-init load-data run-batch run-yahoo run-llm run-compare fetch metrics clean-logs
+.PHONY: up down ps logs hdfs-init load-data run-batch run-yahoo run-llm run-compare fetch metrics clean-logs compare \
+discover-traffic normalize-traffic hdfs-put-traffic traffic-analysis fetch-traffic compare-traffic traffic-pipeline
 
 up:
 	$(COMPOSE) up -d --build
@@ -22,45 +26,87 @@ clean-logs:
 	rm -f $(LOG_DIR)/*.log $(LOG_DIR)/pig/*.log
 
 hdfs-init:
-	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -mkdir -p /data/input/yahoo /data/input/llm /data/output/yahoo /data/output/llm /data/output/compare"
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfsadmin -safemode wait"
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -mkdir -p /data/input/yahoo /data/input/llm /data/output/yahoo /data/output/llm /data/output/compare /data/resources"
+	$(COMPOSE) cp distributed-batch-ling/pig/stopwords_es.txt namenode:/tmp/stopwords_es.txt
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -put -f /tmp/stopwords_es.txt /data/resources/ && rm -f /tmp/stopwords_es.txt"
 
-load-data: $(OUTPUT_DIR)/yahoo_respuestas.csv $(OUTPUT_DIR)/llm_respuestas.csv
-	$(COMPOSE) cp $(OUTPUT_DIR)/yahoo_respuestas.csv namenode:/tmp/yahoo_respuestas.csv
-	$(COMPOSE) cp $(OUTPUT_DIR)/llm_respuestas.csv namenode:/tmp/llm_respuestas.csv
+load-data: $(OUTPUT_DIR)/yahoo_respuestas.txt $(OUTPUT_DIR)/llm_respuestas.txt
+	$(COMPOSE) cp $(OUTPUT_DIR)/yahoo_respuestas.txt namenode:/tmp/yahoo_respuestas.txt
+	$(COMPOSE) cp $(OUTPUT_DIR)/llm_respuestas.txt namenode:/tmp/llm_respuestas.txt
 	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -mkdir -p /data/input/yahoo /data/input/llm"
-	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -put -f /tmp/yahoo_respuestas.csv /data/input/yahoo/"
-	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -put -f /tmp/llm_respuestas.csv /data/input/llm/"
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -put -f /tmp/yahoo_respuestas.txt /data/input/yahoo/"
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -put -f /tmp/llm_respuestas.txt /data/input/llm/"
 
-$(OUTPUT_DIR)/yahoo_respuestas.csv $(OUTPUT_DIR)/llm_respuestas.csv:
+$(OUTPUT_DIR):
+	mkdir -p $(OUTPUT_DIR)
+
+$(OUTPUT_DIR)/yahoo_respuestas.txt: | $(OUTPUT_DIR)
 	@if [ -z "$(DUMP_PATH)" ]; then \
 		printf 'DUMP_PATH variable is required. Example: make load-data DUMP_PATH=data/respuestas.csv\n'; \
 		exit 1; \
 	fi
-	python distributed-batch-ling/ingestion/exporter.py --input $(DUMP_PATH) --output-dir $(OUTPUT_DIR) $(if $(VERBOSE),--verbose,)
+	python distributed-batch-ling/ingestion/exporter.py --input $(DUMP_PATH) --output-dir $(OUTPUT_DIR) $(if $(VERBOSE),--verbose,) $(if $(SCHEMA),--input-schema $(SCHEMA),) $(if $(TRAFFIC_TEXT_COLUMNS),--traffic-text-columns $(TRAFFIC_TEXT_COLUMNS),) $(if $(TRAFFIC_ORIGIN_DEFAULT),--traffic-origin-default $(TRAFFIC_ORIGIN_DEFAULT),) $(if $(TRAFFIC_ORIGIN_MAP),--traffic-origin-map $(TRAFFIC_ORIGIN_MAP),) $(if $(TRAFFIC_QUESTION_FIELD),--traffic-question-field $(TRAFFIC_QUESTION_FIELD),) $(if $(TRAFFIC_TIMESTAMP_FIELD),--traffic-timestamp-field $(TRAFFIC_TIMESTAMP_FIELD),) $(if $(TRAFFIC_TOPIC_FIELD),--traffic-topic-field $(TRAFFIC_TOPIC_FIELD),)
+
+$(OUTPUT_DIR)/llm_respuestas.txt $(OUTPUT_DIR)/yahoo_respuestas.csv $(OUTPUT_DIR)/llm_respuestas.csv: $(OUTPUT_DIR)/yahoo_respuestas.txt
+	@:
 
 run-batch: run-yahoo run-llm run-compare
 
 run-yahoo:
 	mkdir -p $(LOG_DIR) $(LOG_DIR)/pig
-	$(COMPOSE) exec -T pig bash -lc "set -o pipefail && pig -x mapreduce -param INPUT=/data/input/yahoo -param OUTPUT=/data/output/yahoo/wordcount -param TOP_OUTPUT=/data/output/yahoo/top50 -param STOPWORDS=/opt/pig/scripts/stopwords_es.txt -f /opt/pig/scripts/wordcount_yahoo.pig 2>&1 | tee /opt/pig/logs/pig_yahoo.log"
-	@cat $(LOG_DIR)/pig/pig_yahoo.log > $(LOG_DIR)/pig_yahoo.log
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -rm -r -f /data/output/yahoo/full /data/output/yahoo/top >/dev/null 2>&1 || true"
+	$(COMPOSE) exec -T pig bash -lc "set -o pipefail && /opt/pig/bin/pig -x mapreduce -param INPUT=/data/input/yahoo/yahoo_respuestas.txt -param OUTPUT=/data/output/yahoo -param STOPWORDS=/data/resources/stopwords_es.txt -param TOPN=50 -f /opt/pig/scripts/wordfreq.pig 2>&1 | tee /opt/pig/logs/pig_yahoo.log"
+	$(COMPOSE) cp pig:/opt/pig/logs/pig_yahoo.log $(LOG_DIR)/pig/pig_yahoo.log
+	@cp $(LOG_DIR)/pig/pig_yahoo.log $(LOG_DIR)/pig_yahoo.log
 
 run-llm:
 	mkdir -p $(LOG_DIR) $(LOG_DIR)/pig
-	$(COMPOSE) exec -T pig bash -lc "set -o pipefail && pig -x mapreduce -param INPUT=/data/input/llm -param OUTPUT=/data/output/llm/wordcount -param TOP_OUTPUT=/data/output/llm/top50 -param STOPWORDS=/opt/pig/scripts/stopwords_es.txt -f /opt/pig/scripts/wordcount_llm.pig 2>&1 | tee /opt/pig/logs/pig_llm.log"
-	@cat $(LOG_DIR)/pig/pig_llm.log > $(LOG_DIR)/pig_llm.log
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -rm -r -f /data/output/llm/full /data/output/llm/top >/dev/null 2>&1 || true"
+	$(COMPOSE) exec -T pig bash -lc "set -o pipefail && /opt/pig/bin/pig -x mapreduce -param INPUT=/data/input/llm/llm_respuestas.txt -param OUTPUT=/data/output/llm -param STOPWORDS=/data/resources/stopwords_es.txt -param TOPN=50 -f /opt/pig/scripts/wordfreq.pig 2>&1 | tee /opt/pig/logs/pig_llm.log"
+	$(COMPOSE) cp pig:/opt/pig/logs/pig_llm.log $(LOG_DIR)/pig/pig_llm.log
+	@cp $(LOG_DIR)/pig/pig_llm.log $(LOG_DIR)/pig_llm.log
 
 run-compare:
 	mkdir -p $(LOG_DIR) $(LOG_DIR)/pig
-	$(COMPOSE) exec -T pig bash -lc "set -o pipefail && pig -x mapreduce -param INPUT_YAHOO=/data/output/yahoo/wordcount -param INPUT_LLM=/data/output/llm/wordcount -param OUTPUT=/data/output/compare/wordcount_diff -f /opt/pig/scripts/compare.pig 2>&1 | tee /opt/pig/logs/pig_compare.log"
-	@cat $(LOG_DIR)/pig/pig_compare.log > $(LOG_DIR)/pig_compare.log
+	$(COMPOSE) exec -T namenode sh -c "$(HDFS) dfs -rm -r -f /data/output/compare/wordcount_diff >/dev/null 2>&1 || true"
+	$(COMPOSE) exec -T pig bash -lc "set -o pipefail && /opt/pig/bin/pig -x mapreduce -param INPUT_YAHOO=/data/output/yahoo/full -param INPUT_LLM=/data/output/llm/full -param OUTPUT=/data/output/compare/wordcount_diff -f /opt/pig/scripts/compare.pig 2>&1 | tee /opt/pig/logs/pig_compare.log"
+	$(COMPOSE) cp pig:/opt/pig/logs/pig_compare.log $(LOG_DIR)/pig/pig_compare.log
+	@cp $(LOG_DIR)/pig/pig_compare.log $(LOG_DIR)/pig_compare.log
 
 fetch:
 	mkdir -p distributed-batch-ling/artifacts
-	$(COMPOSE) exec -T namenode sh -c "rm -rf /tmp/batch-artifacts && mkdir -p /tmp/batch-artifacts && $(HDFS) dfs -get -f /data/output /tmp/batch-artifacts/"
+	$(COMPOSE) exec -T namenode sh -c "rm -rf /tmp/batch-artifacts && mkdir -p /tmp/batch-artifacts && if $(HDFS) dfs -test -e /data/output; then $(HDFS) dfs -get -f /data/output /tmp/batch-artifacts/; else echo 'No HDFS output found under /data/output'; fi"
 	rm -rf distributed-batch-ling/artifacts/output
-	$(COMPOSE) cp namenode:/tmp/batch-artifacts/data/output distributed-batch-ling/artifacts
+	@if $(COMPOSE) cp namenode:/tmp/batch-artifacts/output distributed-batch-ling/artifacts >/dev/null 2>&1; then \
+	        echo "Fetched artifacts into distributed-batch-ling/artifacts/output"; \
+	else \
+	        echo "No output artifacts were copied. Ensure the batch jobs completed successfully before running make fetch."; \
+	fi
 	$(COMPOSE) exec -T namenode sh -c "rm -rf /tmp/batch-artifacts"
 
 metrics:
 	python distributed-batch-ling/scripts/metrics.py --compose-file distributed-batch-ling/deploy/docker-compose.yml
+
+compare:
+	python distributed-batch-ling/scripts/compare_topn.py --input-dir distributed-batch-ling/artifacts/output --output-dir distributed-batch-ling/artifacts $(if $(TOPN),--top-n $(TOPN),) $(if $(CHART),--chart,)
+
+discover-traffic:
+	python distributed-batch-ling/scripts/discover_traffic_runs.py --output $(TRAFFIC_MANIFEST) $(if $(BASE_DIR),--base-dir $(BASE_DIR),) $(if $(FORMAT),--format $(FORMAT),)
+
+normalize-traffic:
+	python distributed-batch-ling/scripts/normalize_traffic_csv.py --manifest $(TRAFFIC_MANIFEST) --output-dir $(TRAFFIC_NORMALIZED_DIR) $(if $(OVERWRITE),--overwrite,)
+
+hdfs-put-traffic:
+	python distributed-batch-ling/scripts/hdfs_put_traffic.py --manifest $(TRAFFIC_MANIFEST) --normalized-dir $(TRAFFIC_NORMALIZED_DIR) --compose-file distributed-batch-ling/deploy/docker-compose.yml
+
+traffic-analysis:
+	python distributed-batch-ling/scripts/run_traffic_analysis.py --manifest $(TRAFFIC_MANIFEST) --compose-file distributed-batch-ling/deploy/docker-compose.yml
+
+fetch-traffic:
+	python distributed-batch-ling/scripts/fetch_traffic_results.py --manifest $(TRAFFIC_MANIFEST) --compose-file distributed-batch-ling/deploy/docker-compose.yml --output-dir $(TRAFFIC_ARTIFACT_DIR)
+
+compare-traffic:
+	python distributed-batch-ling/scripts/compare_policies_distributions.py --input-dir $(TRAFFIC_ARTIFACT_DIR) --output $(TRAFFIC_ARTIFACT_DIR)/summary_global_policies_distributions.tsv
+
+traffic-pipeline: discover-traffic normalize-traffic hdfs-put-traffic traffic-analysis fetch-traffic compare-traffic
