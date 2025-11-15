@@ -51,17 +51,20 @@ run-batch: run-yahoo run-llm run-compare
 run-yahoo:
 	mkdir -p $(LOG_DIR) $(LOG_DIR)/pig
 	$(COMPOSE) exec -T pig bash -lc "set -o pipefail && /opt/pig/bin/pig -x mapreduce -param INPUT=/data/input/yahoo/yahoo_respuestas.txt -param OUTPUT=/data/output/yahoo -param STOPWORDS=/data/resources/stopwords_es.txt -param TOPN=50 -f /opt/pig/scripts/wordfreq.pig 2>&1 | tee /opt/pig/logs/pig_yahoo.log"
-	@cat $(LOG_DIR)/pig/pig_yahoo.log > $(LOG_DIR)/pig_yahoo.log
+	$(COMPOSE) cp pig:/opt/pig/logs/pig_yahoo.log $(LOG_DIR)/pig/pig_yahoo.log
+	@cp $(LOG_DIR)/pig/pig_yahoo.log $(LOG_DIR)/pig_yahoo.log
 
 run-llm:
 	mkdir -p $(LOG_DIR) $(LOG_DIR)/pig
 	$(COMPOSE) exec -T pig bash -lc "set -o pipefail && /opt/pig/bin/pig -x mapreduce -param INPUT=/data/input/llm/llm_respuestas.txt -param OUTPUT=/data/output/llm -param STOPWORDS=/data/resources/stopwords_es.txt -param TOPN=50 -f /opt/pig/scripts/wordfreq.pig 2>&1 | tee /opt/pig/logs/pig_llm.log"
-	@cat $(LOG_DIR)/pig/pig_llm.log > $(LOG_DIR)/pig_llm.log
+	$(COMPOSE) cp pig:/opt/pig/logs/pig_llm.log $(LOG_DIR)/pig/pig_llm.log
+	@cp $(LOG_DIR)/pig/pig_llm.log $(LOG_DIR)/pig_llm.log
 
 run-compare:
 	mkdir -p $(LOG_DIR) $(LOG_DIR)/pig
 	$(COMPOSE) exec -T pig bash -lc "set -o pipefail && /opt/pig/bin/pig -x mapreduce -param INPUT_YAHOO=/data/output/yahoo/full -param INPUT_LLM=/data/output/llm/full -param OUTPUT=/data/output/compare/wordcount_diff -f /opt/pig/scripts/compare.pig 2>&1 | tee /opt/pig/logs/pig_compare.log"
-	@cat $(LOG_DIR)/pig/pig_compare.log > $(LOG_DIR)/pig_compare.log
+	$(COMPOSE) cp pig:/opt/pig/logs/pig_compare.log $(LOG_DIR)/pig/pig_compare.log
+	@cp $(LOG_DIR)/pig/pig_compare.log $(LOG_DIR)/pig_compare.log
 
 fetch:
 	mkdir -p distributed-batch-ling/artifacts

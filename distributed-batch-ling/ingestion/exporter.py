@@ -168,8 +168,9 @@ def _sniff_dialect(path: pathlib.Path) -> csv.Dialect:
 
 
 def read_csv_headers(path: pathlib.Path) -> List[str]:
+    dialect = _sniff_dialect(path)
     with path.open("r", encoding="utf-8", newline="") as handle:
-        reader = csv.reader(handle)
+        reader = csv.reader(handle, dialect=dialect)
         try:
             headers = next(reader)
         except StopIteration:
