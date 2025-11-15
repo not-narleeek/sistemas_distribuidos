@@ -1,74 +1,96 @@
 # Canalización batch Hadoop + Pig
 
-Este módulo contiene todos los artefactos necesarios para ejecutar la Tarea 3 del curso: un análisis batch de respuestas humanas vs. respuestas generadas por el LLM.
+Esta carpeta contiene el flujo batch solicitado en Tarea 3. Sigue los pasos resumidos para ejecutar el análisis o reproducir los experimentos.
 
-## Estructura
-
-```
-ingestion/                # Exportador desde CSV/Parquet o MongoDB hacia CSV particionados
-pig/                      # Scripts Pig + stopwords y UDFs Jython
-pig/udf/text_utils.py     # Normalización y filtrado de tokens
-pig/wordcount_*.pig       # Trabajos MapReduce para Yahoo y LLM
-pig/compare.pig           # Comparativa de frecuencias
-deploy/docker-compose.yml # Clúster Hadoop (NameNode, DataNode, HistoryServer, Pig)
-deploy/hadoop/Dockerfile  # Imagen Pig con Pig 0.17 y configs montadas
-artifacts/                # Resultados traídos desde HDFS (poblado con `make fetch`)
-logs/                     # Logs de Pig y Hadoop montados como volumen
-scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamaños)
-```
-
-## Prerrequisitos
-
-- Docker Engine ≥ 20.10 con soporte `docker compose` v2.
-- GNU Make, Python 3.10+.
-- Archivo CSV/Parquet o acceso a MongoDB con columnas: `id_pregunta`, `respuesta_texto`, `origen`, `ts_creacion`.
-- Conexión a Internet la primera vez (descarga Pig 0.17.0).
-
-## Flujo típico
+## Prerrequisitos rápidos
 
 ```bash
-# 1) Levantar Hadoop + Pig
-make up
-
-# 2) Crear carpetas en HDFS
-make hdfs-init
-
-# 3) Exportar e ingerir datos desde CSV
-make load-data DUMP_PATH=data/respuestas.csv
-
-# 4) Ejecutar análisis completo
-make run-batch
-
-# 5) Traer resultados a ./distributed-batch-ling/artifacts
-make fetch
-
-# 6) Calcular métricas
-make metrics
+# Verifica dependencias básicas
+docker version
+make --version
+python --version
 ```
 
-Los comandos `run-yahoo`, `run-llm` y `run-compare` también pueden invocarse de forma independiente.
+## Flujo Yahoo vs LLM (WordCount)
 
-## Exportación desde MongoDB
+1. Arranca el clúster:
+   ```bash
+   make up
+   ```
+2. Prepara HDFS y publica stopwords:
+   ```bash
+   make hdfs-init
+   ```
+3. Exporta y sube datos (auto-detecta esquema; añade `SCHEMA=traffic` y parámetros de tráfico si es necesario):
+   ```bash
+   make load-data DUMP_PATH=/ruta/a/datos.csv
+   ```
+4. Ejecuta los jobs de Pig (Yahoo, LLM y comparador):
+   ```bash
+   make run-batch
+   ```
+5. Descarga resultados desde HDFS:
+   ```bash
+   make fetch
+   ```
+6. Genera tablas/Top-N opcionales:
+   ```bash
+   make compare CHART=1   # omite CHART=1 si no quieres gráficos
+   ```
+7. Calcula métricas agregadas:
+   ```bash
+   make metrics
+   ```
+8. Apaga el entorno cuando finalices:
+   ```bash
+   make down
+   ```
 
-```bash
-python distributed-batch-ling/ingestion/exporter.py \
-  --mongo-uri "mongodb://usuario:pwd@localhost:27017" \
-  --mongo-db respuestas \
-  --mongo-collection historico \
-  --output-dir distributed-batch-ling/ingestion/output \
-  --verbose
-```
+## Flujo de tráfico (FIFO/LFU/LRU)
 
-Para subir automáticamente a HDFS tras la exportación añade `--hdfs-base /data/input --compose-file distributed-batch-ling/deploy/docker-compose.yml`.
+1. Descubre archivos disponibles y crea el manifest:
+   ```bash
+   make discover-traffic BASE_DIR=data_collected/traffic   # el parámetro es opcional
+   ```
+2. Normaliza los CSV crudos:
+   ```bash
+   make normalize-traffic OVERWRITE=1   # quita OVERWRITE=1 para conservar archivos existentes
+   ```
+3. Publica los datasets normalizados en HDFS:
+   ```bash
+   make hdfs-put-traffic
+   ```
+4. Ejecuta Pig para cada combinación política/distribución:
+   ```bash
+   make traffic-analysis
+   ```
+5. Trae los TSV al host:
+   ```bash
+   make fetch-traffic
+   ```
+6. Produce la comparativa global:
+   ```bash
+   make compare-traffic
+   ```
+7. Lanza todo el pipeline anterior en un solo comando si prefieres:
+   ```bash
+   make traffic-pipeline
+   ```
 
-## Observabilidad y métricas
+## Utilidades adicionales
 
-- Los logs de Pig se almacenan en `logs/pig_*.log` y se usan para medir duración.
-- `scripts/metrics.py` ejecuta `hdfs dfs -count` y `wc -l` dentro del NameNode para obtener tamaños y registros.
-- El HistoryServer queda expuesto en `http://localhost:8188` (puerto por defecto del contenedor BDE) para consultar ejecuciones pasadas.
-
-## Entregables
-
-- `docs/batch_analysis/informe.tex`: documentación técnica y guía de demostración.
-- `distributed-batch-ling/artifacts/`: resultados obtenidos tras ejecutar el análisis.
-- Video demostrativo (no incluido en el repositorio) siguiendo la guía del informe.
+- Exportar desde MongoDB y subir directo a HDFS:
+  ```bash
+  python distributed-batch-ling/ingestion/exporter.py \
+    --mongo-uri "mongodb://usuario:pwd@localhost:27017" \
+    --mongo-db respuestas \
+    --mongo-collection historico \
+    --output-dir distributed-batch-ling/ingestion/output \
+    --compose-file distributed-batch-ling/deploy/docker-compose.yml \
+    --hdfs-base /data/input
+  ```
+- Limpiar artefactos y logs antes de nuevas corridas:
+  ```bash
+  make clean-artifacts
+  make clean-logs
+  ```
