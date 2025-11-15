@@ -21,6 +21,10 @@ except ImportError:  # pragma: no cover - optional dependency
 REQUIRED_COLUMNS = {"id_pregunta", "respuesta_texto", "origen", "ts_creacion"}
 VALID_ORIGINS = {"yahoo", "llm"}
 DEFAULT_CHUNK_SIZE = 10_000
+DEFAULT_TRAFFIC_TEXT_COLUMNS = ("operation", "status", "topic")
+
+Record = MutableMapping[str, str]
+Chunk = List[Record]
 
 Record = MutableMapping[str, str]
 Chunk = List[Record]
@@ -108,6 +112,48 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         action="store_true",
         help="Print progress information while exporting.",
     )
+    parser.add_argument(
+        "--input-schema",
+        choices=("responses", "traffic"),
+        default="responses",
+        help="Structure of the input dataset. Use 'traffic' for broker logs with timestamp/topic columns.",
+    )
+    parser.add_argument(
+        "--traffic-text-columns",
+        default=",".join(DEFAULT_TRAFFIC_TEXT_COLUMNS),
+        help=(
+            "Comma-separated list of columns that should be concatenated to build the text field when "
+            "--input-schema traffic is selected."
+        ),
+    )
+    parser.add_argument(
+        "--traffic-origin-default",
+        choices=sorted(VALID_ORIGINS),
+        default="yahoo",
+        help="Origin to use when a topic cannot be mapped explicitly while using the traffic schema.",
+    )
+    parser.add_argument(
+        "--traffic-origin-map",
+        help=(
+            "Optional topic-to-origin mapping when using the traffic schema. Provide entries as "
+            "topic_name=origin separated by commas (e.g. answers_llm=llm,answers_yahoo=yahoo)."
+        ),
+    )
+    parser.add_argument(
+        "--traffic-question-field",
+        default="question_id",
+        help="Column name that contains the question identifier when using the traffic schema.",
+    )
+    parser.add_argument(
+        "--traffic-timestamp-field",
+        default="timestamp",
+        help="Column name that contains the creation timestamp when using the traffic schema.",
+    )
+    parser.add_argument(
+        "--traffic-topic-field",
+        default="topic",
+        help="Column name that contains the broker topic when using the traffic schema.",
+    )
     return parser.parse_args(argv)
 
 
@@ -121,7 +167,11 @@ def _sniff_dialect(path: pathlib.Path) -> csv.Dialect:
         return csv.get_dialect("excel")
 
 
-def iter_records_from_csv(path: pathlib.Path, chunk_size: int) -> Iterator[Chunk]:
+def iter_records_from_csv(
+    path: pathlib.Path,
+    chunk_size: int,
+    required_columns: Optional[set[str]] = None,
+) -> Iterator[Chunk]:
     dialect = _sniff_dialect(path)
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle, dialect=dialect)
@@ -129,11 +179,12 @@ def iter_records_from_csv(path: pathlib.Path, chunk_size: int) -> Iterator[Chunk
             raise ValidationError("Input CSV must include a header row with column names")
 
         normalized_headers = [header.strip() for header in reader.fieldnames]
-        missing = REQUIRED_COLUMNS - set(normalized_headers)
-        if missing:
-            raise ValidationError(
-                "Input is missing required columns: " + ", ".join(sorted(missing))
-            )
+        if required_columns is not None:
+            missing = required_columns - set(normalized_headers)
+            if missing:
+                raise ValidationError(
+                    "Input is missing required columns: " + ", ".join(sorted(missing))
+                )
 
         batch: Chunk = []
         for raw_row in reader:
@@ -201,38 +252,163 @@ def _normalize_timestamp(raw_value: str) -> str:
     return ""
 
 
-def validate_chunk(chunk: Chunk) -> Chunk:
-    if not chunk:
-        return chunk
+def _parse_mapping(raw_value: Optional[str]) -> dict[str, str]:
+    if not raw_value:
+        return {}
+    mapping: dict[str, str] = {}
+    entries = [entry.strip() for entry in raw_value.split(",") if entry.strip()]
+    for entry in entries:
+        key, sep, value = entry.partition("=")
+        if not sep:
+            raise ValidationError(
+                "Invalid mapping entry. Expected key=value pairs separated by commas."
+            )
+        key_norm = key.strip().lower()
+        value_norm = value.strip().lower()
+        if value_norm not in VALID_ORIGINS:
+            raise ValidationError(
+                f"Invalid origin '{value.strip()}' in mapping. Allowed values: {', '.join(sorted(VALID_ORIGINS))}"
+            )
+        mapping[key_norm] = value_norm
+    return mapping
 
-    missing = REQUIRED_COLUMNS - set(chunk[0].keys())
-    if missing:
-        raise ValidationError(f"Input is missing required columns: {', '.join(sorted(missing))}")
 
-    cleaned: Chunk = []
-    invalid_origins: set[str] = set()
-    for row in chunk:
-        origin = str(row.get("origen", "")).strip().lower()
-        text = str(row.get("respuesta_texto", "")).strip()
-        if not text or not origin:
-            continue
-        if origin not in VALID_ORIGINS:
-            invalid_origins.add(origin)
-            continue
-        normalized: Record = {
-            "id_pregunta": str(row.get("id_pregunta", "")).strip(),
-            "respuesta_texto": _clean_text(text),
-            "origen": origin,
-            "ts_creacion": _normalize_timestamp(str(row.get("ts_creacion", ""))),
-        }
-        cleaned.append(normalized)
+class BaseSchemaAdapter:
+    required_source_columns: set[str]
 
-    if invalid_origins:
-        raise ValidationError(
-            "Found rows with invalid 'origen' values: " + ", ".join(sorted(invalid_origins))
-        )
+    def prepare_chunk(self, chunk: Chunk) -> Chunk:
+        raise NotImplementedError
 
-    return cleaned
+
+class ResponsesSchemaAdapter(BaseSchemaAdapter):
+    required_source_columns = set(REQUIRED_COLUMNS)
+
+    def prepare_chunk(self, chunk: Chunk) -> Chunk:
+        if not chunk:
+            return chunk
+
+        missing = self.required_source_columns - set(chunk[0].keys())
+        if missing:
+            raise ValidationError(
+                f"Input is missing required columns: {', '.join(sorted(missing))}"
+            )
+
+        cleaned: Chunk = []
+        invalid_origins: set[str] = set()
+        for row in chunk:
+            origin = str(row.get("origen", "")).strip().lower()
+            text = str(row.get("respuesta_texto", "")).strip()
+            if not text or not origin:
+                continue
+            if origin not in VALID_ORIGINS:
+                invalid_origins.add(origin)
+                continue
+            normalized: Record = {
+                "id_pregunta": str(row.get("id_pregunta", "")).strip(),
+                "respuesta_texto": _clean_text(text),
+                "origen": origin,
+                "ts_creacion": _normalize_timestamp(str(row.get("ts_creacion", ""))),
+            }
+            cleaned.append(normalized)
+
+        if invalid_origins:
+            raise ValidationError(
+                "Found rows with invalid 'origen' values: "
+                + ", ".join(sorted(invalid_origins))
+            )
+
+        return cleaned
+
+
+class TrafficSchemaAdapter(BaseSchemaAdapter):
+    def __init__(
+        self,
+        text_columns: List[str],
+        origin_default: str,
+        origin_map: dict[str, str],
+        question_field: str,
+        timestamp_field: str,
+        topic_field: str,
+    ) -> None:
+        if not text_columns:
+            raise ValidationError("At least one text column must be provided for traffic schema")
+        self.text_columns = [col.strip() for col in text_columns if col.strip()]
+        if not self.text_columns:
+            raise ValidationError("At least one text column must be provided for traffic schema")
+        self.origin_default = origin_default
+        self.origin_map = {key.lower(): value for key, value in origin_map.items()}
+        self.question_field = question_field
+        self.timestamp_field = timestamp_field
+        self.topic_field = topic_field
+        self.required_source_columns = {question_field, timestamp_field, topic_field}
+        self.required_source_columns.update(self.text_columns)
+
+    def _origin_from_topic(self, topic: str) -> str:
+        topic_lower = topic.lower()
+        if topic_lower in self.origin_map:
+            return self.origin_map[topic_lower]
+        for key, value in self.origin_map.items():
+            if key and key in topic_lower:
+                return value
+        if "llm" in topic_lower:
+            return "llm"
+        if "yahoo" in topic_lower:
+            return "yahoo"
+        if "answer" in topic_lower and "llm" in topic_lower:
+            return "llm"
+        if "answer" in topic_lower and "yahoo" in topic_lower:
+            return "yahoo"
+        return self.origin_default
+
+    def prepare_chunk(self, chunk: Chunk) -> Chunk:
+        if not chunk:
+            return chunk
+
+        missing = self.required_source_columns - set(chunk[0].keys())
+        if missing:
+            raise ValidationError(
+                "Input is missing required columns: " + ", ".join(sorted(missing))
+            )
+
+        cleaned: Chunk = []
+        for row in chunk:
+            topic_value = str(row.get(self.topic_field, "")).strip()
+            origin = self._origin_from_topic(topic_value)
+            text_parts = []
+            for column in self.text_columns:
+                value = str(row.get(column, "")).strip()
+                if value:
+                    text_parts.append(value)
+            text = " ".join(text_parts)
+            if not text:
+                continue
+            normalized: Record = {
+                "id_pregunta": str(row.get(self.question_field, "")).strip(),
+                "respuesta_texto": _clean_text(text),
+                "origen": origin,
+                "ts_creacion": _normalize_timestamp(
+                    str(row.get(self.timestamp_field, ""))
+                ),
+            }
+            cleaned.append(normalized)
+
+        return cleaned
+
+
+def build_adapter(args: argparse.Namespace) -> BaseSchemaAdapter:
+    if args.input_schema == "responses":
+        return ResponsesSchemaAdapter()
+
+    text_columns = [column.strip() for column in args.traffic_text_columns.split(",")]
+    origin_map = _parse_mapping(args.traffic_origin_map)
+    return TrafficSchemaAdapter(
+        text_columns=text_columns,
+        origin_default=args.traffic_origin_default,
+        origin_map=origin_map,
+        question_field=args.traffic_question_field,
+        timestamp_field=args.traffic_timestamp_field,
+        topic_field=args.traffic_topic_field,
+    )
 
 
 def _clean_text(value: str) -> str:
@@ -246,6 +422,7 @@ def _clean_text(value: str) -> str:
 def write_partitioned_outputs(
     chunks: Iterable[Chunk],
     output_dir: pathlib.Path,
+    adapter: BaseSchemaAdapter,
     dry_run: bool = False,
     verbose: bool = False,
 ) -> ExportStats:
@@ -270,7 +447,7 @@ def write_partitioned_outputs(
     stats = ExportStats()
 
     for chunk in chunks:
-        chunk = validate_chunk(chunk)
+        chunk = adapter.prepare_chunk(chunk)
         if not chunk:
             continue
         stats.total_records += len(chunk)
@@ -366,6 +543,8 @@ def push_to_hdfs(
 def main(argv: Optional[List[str]] = None) -> int:
     args = parse_args(argv)
 
+    adapter = build_adapter(args)
+
     if args.input:
         input_path = pathlib.Path(args.input)
         if not input_path.exists():
@@ -390,7 +569,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                     raise SystemExit(f"Input file {input_path} not found")
         suffix = input_path.suffix.lower()
         if suffix == ".csv":
-            iterator = iter_records_from_csv(input_path, args.chunk_size)
+            iterator = iter_records_from_csv(
+                input_path,
+                args.chunk_size,
+                required_columns=adapter.required_source_columns,
+            )
         elif suffix in {".parquet", ".pq"}:
             iterator = iter_records_from_parquet(input_path)
         else:
@@ -399,7 +582,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         iterator = iter_records_from_mongo(args)
 
     output_dir = pathlib.Path(args.output_dir)
-    stats = write_partitioned_outputs(iterator, output_dir, dry_run=args.dry_run, verbose=args.verbose)
+    stats = write_partitioned_outputs(
+        iterator,
+        output_dir,
+        adapter=adapter,
+        dry_run=args.dry_run,
+        verbose=args.verbose,
+    )
 
     summary = stats.as_dict()
     print(json.dumps({"status": "completed", **summary}, indent=2))

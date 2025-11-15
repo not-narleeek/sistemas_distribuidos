@@ -31,9 +31,10 @@ scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamañ
    - Verifica que GNU Make funciona con `make --version`.
    - Comprueba que Python 3.10+ está disponible (se usa para los scripts auxiliares) con `python --version`.
 
-2. **Preparar el dataset de respuestas.**
-   - El exportador espera un CSV o Parquet con al menos las columnas `id_pregunta`, `respuesta_texto`, `origen` (`yahoo` o `llm`) y `ts_creacion`.
-   - Si tu archivo tiene otros nombres de columnas, normalízalos antes de ejecutar la ingesta. Como validación rápida puedes correr:
+2. **Preparar el dataset de respuestas (o tráfico).**
+   - El modo por defecto del exportador espera un CSV o Parquet con al menos las columnas `id_pregunta`, `respuesta_texto`, `origen` (`yahoo` o `llm`) y `ts_creacion`.
+   - Si tu archivo proviene del monitoreo de colas (campos como `timestamp`, `operation`, `status`, `topic`), ejecuta el script con `--input-schema traffic`. Este modo mapea automáticamente `topic` → `origen` y genera un texto combinando `operation`, `status` y `topic`. Ajusta el comportamiento con `--traffic-text-columns`, `--traffic-origin-map` o `--traffic-origin-default` cuando sea necesario.
+   - En cualquier caso puedes validar el esquema rápidamente con:
 
      ```bash
      python distributed-batch-ling/ingestion/exporter.py \
