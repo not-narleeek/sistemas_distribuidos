@@ -43,8 +43,8 @@ $(OUTPUT_DIR):
 
 $(OUTPUT_DIR)/yahoo_respuestas.txt: | $(OUTPUT_DIR)
 	@if [ -z "$(DUMP_PATH)" ]; then \
-		printf 'DUMP_PATH variable is required. Example: make load-data DUMP_PATH=data/respuestas.csv\n'; \
-		exit 1; \
+	        printf 'DUMP_PATH variable is required. Example: make load-data DUMP_PATH=data/respuestas.csv\n'; \
+	        exit 1; \
 	fi
 	python distributed-batch-ling/ingestion/exporter.py --input $(DUMP_PATH) --output-dir $(OUTPUT_DIR) $(if $(VERBOSE),--verbose,) $(if $(SCHEMA),--input-schema $(SCHEMA),) $(if $(TRAFFIC_TEXT_COLUMNS),--traffic-text-columns $(TRAFFIC_TEXT_COLUMNS),) $(if $(TRAFFIC_ORIGIN_DEFAULT),--traffic-origin-default $(TRAFFIC_ORIGIN_DEFAULT),) $(if $(TRAFFIC_ORIGIN_MAP),--traffic-origin-map $(TRAFFIC_ORIGIN_MAP),) $(if $(TRAFFIC_QUESTION_FIELD),--traffic-question-field $(TRAFFIC_QUESTION_FIELD),) $(if $(TRAFFIC_TIMESTAMP_FIELD),--traffic-timestamp-field $(TRAFFIC_TIMESTAMP_FIELD),) $(if $(TRAFFIC_TOPIC_FIELD),--traffic-topic-field $(TRAFFIC_TOPIC_FIELD),)
 
