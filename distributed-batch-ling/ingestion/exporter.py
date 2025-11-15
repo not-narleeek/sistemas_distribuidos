@@ -163,18 +163,30 @@ def validate_chunk(chunk: pd.DataFrame) -> pd.DataFrame:
     return chunk
 
 
-def write_partitioned_csv(
+def _clean_text(value: str) -> str:
+    """Normalize text for newline-safe exports."""
+
+    value = value.replace("\r", " ").replace("\n", " ")
+    # Collapse repeated whitespace to keep one space between tokens
+    return " ".join(value.split())
+
+
+def write_partitioned_outputs(
     chunks: Iterable[pd.DataFrame],
     output_dir: pathlib.Path,
     dry_run: bool = False,
     verbose: bool = False,
 ) -> ExportStats:
     output_dir.mkdir(parents=True, exist_ok=True)
-    yahoo_path = output_dir / "yahoo_respuestas.csv"
-    llm_path = output_dir / "llm_respuestas.csv"
+    yahoo_csv_path = output_dir / "yahoo_respuestas.csv"
+    llm_csv_path = output_dir / "llm_respuestas.csv"
+    yahoo_txt_path = output_dir / "yahoo_respuestas.txt"
+    llm_txt_path = output_dir / "llm_respuestas.txt"
 
-    yahoo_file = open(yahoo_path, "w", newline="", encoding="utf-8") if not dry_run else None
-    llm_file = open(llm_path, "w", newline="", encoding="utf-8") if not dry_run else None
+    yahoo_file = open(yahoo_csv_path, "w", newline="", encoding="utf-8") if not dry_run else None
+    llm_file = open(llm_csv_path, "w", newline="", encoding="utf-8") if not dry_run else None
+    yahoo_txt = open(yahoo_txt_path, "w", encoding="utf-8") if not dry_run else None
+    llm_txt = open(llm_txt_path, "w", encoding="utf-8") if not dry_run else None
     yahoo_writer = csv.DictWriter(yahoo_file, fieldnames=sorted(REQUIRED_COLUMNS)) if yahoo_file else None
     llm_writer = csv.DictWriter(llm_file, fieldnames=sorted(REQUIRED_COLUMNS)) if llm_file else None
 
@@ -198,9 +210,20 @@ def write_partitioned_csv(
         if yahoo_writer:
             for row in yahoo_rows:
                 yahoo_writer.writerow(row)
+                if yahoo_txt:
+                    yahoo_txt.write(_clean_text(row["respuesta_texto"]) + "\n")
+        elif yahoo_txt:
+            for row in yahoo_rows:
+                yahoo_txt.write(_clean_text(row["respuesta_texto"]) + "\n")
+
         if llm_writer:
             for row in llm_rows:
                 llm_writer.writerow(row)
+                if llm_txt:
+                    llm_txt.write(_clean_text(row["respuesta_texto"]) + "\n")
+        elif llm_txt:
+            for row in llm_rows:
+                llm_txt.write(_clean_text(row["respuesta_texto"]) + "\n")
 
         if verbose:
             print(
@@ -213,7 +236,7 @@ def write_partitioned_csv(
                 )
             )
 
-    for handler in (yahoo_file, llm_file):
+    for handler in (yahoo_file, llm_file, yahoo_txt, llm_txt):
         if handler:
             handler.close()
 
@@ -230,8 +253,8 @@ def push_to_hdfs(
     import subprocess
 
     local_files = {
-        "yahoo": output_dir / "yahoo_respuestas.csv",
-        "llm": output_dir / "llm_respuestas.csv",
+        "yahoo": output_dir / "yahoo_respuestas.txt",
+        "llm": output_dir / "llm_respuestas.txt",
     }
     for origin, path in local_files.items():
         if not path.exists():
@@ -286,7 +309,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         iterator = iter_records_from_mongo(args)
 
     output_dir = pathlib.Path(args.output_dir)
-    stats = write_partitioned_csv(iterator, output_dir, dry_run=args.dry_run, verbose=args.verbose)
+    stats = write_partitioned_outputs(iterator, output_dir, dry_run=args.dry_run, verbose=args.verbose)
 
     summary = stats.as_dict()
     print(json.dumps({"status": "completed", **summary}, indent=2))

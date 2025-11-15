@@ -8,7 +8,7 @@ Este módulo contiene todos los artefactos necesarios para ejecutar la Tarea 3 d
 ingestion/                # Exportador desde CSV/Parquet o MongoDB hacia CSV particionados
 pig/                      # Scripts Pig + stopwords y UDFs Jython
 pig/udf/text_utils.py     # Normalización y filtrado de tokens
-pig/wordcount_*.pig       # Trabajos MapReduce para Yahoo y LLM
+pig/wordfreq.pig          # Trabajo MapReduce parametrizable (Yahoo / LLM)
 pig/compare.pig           # Comparativa de frecuencias
 deploy/docker-compose.yml # Clúster Hadoop (NameNode, DataNode, HistoryServer, Pig)
 deploy/hadoop/Dockerfile  # Imagen Pig con Pig 0.17 y configs montadas
@@ -36,13 +36,16 @@ make hdfs-init
 # 3) Exportar e ingerir datos desde CSV
 make load-data DUMP_PATH=data/respuestas.csv
 
-# 4) Ejecutar análisis completo
+# 4) Ejecutar análisis completo (WordCount + comparativa)
 make run-batch
 
 # 5) Traer resultados a ./distributed-batch-ling/artifacts
 make fetch
 
-# 6) Calcular métricas
+# 6) Generar tablas Top-N y gráficos
+make compare CHART=1
+
+# 7) Calcular métricas
 make metrics
 ```
 
@@ -59,6 +62,7 @@ python distributed-batch-ling/ingestion/exporter.py \
   --verbose
 ```
 
+El exportador genera tanto CSVs con metadatos (`*_respuestas.csv`) como corpus de texto plano (`*_respuestas.txt`) listos para cargarse en HDFS.
 Para subir automáticamente a HDFS tras la exportación añade `--hdfs-base /data/input --compose-file distributed-batch-ling/deploy/docker-compose.yml`.
 
 ## Observabilidad y métricas
