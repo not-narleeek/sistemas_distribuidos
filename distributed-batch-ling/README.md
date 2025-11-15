@@ -85,6 +85,8 @@ scripts/metrics.py        # Cálculo de métricas (duración, throughput, tamañ
 
    Este target lanza `wordfreq.pig` para Yahoo y LLM, además del comparador. Para ejecuciones individuales existen `make run-yahoo`, `make run-llm` y `make run-compare`.
 
+   Antes de cada ejecución se eliminan las rutas de salida previas en HDFS para evitar el error de "Output directory ... already exists" que impide volver a correr los *jobs* sin limpiar manualmente.
+
 7. **Descargar los resultados al host.**
 
    ```bash
